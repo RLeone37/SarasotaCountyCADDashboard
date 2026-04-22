@@ -365,7 +365,6 @@ margin-top: 4px;
 }
 
 .inc-meta { text-align: right; flex-shrink: 0; }
-
 .inc-time { font-family: ‘Share Tech Mono’, monospace; font-size: 10px; color: var(–accent); }
 .inc-date { font-family: ‘Share Tech Mono’, monospace; font-size: 8px; color: var(–muted); margin-top: 2px; }
 
@@ -379,8 +378,8 @@ border-radius: 2px;
 margin-top: 4px;
 text-transform: uppercase;
 }
-.badge-today  { background:rgba(255,61,61,0.18); color:var(–red); }
-.badge-older  { background:rgba(60,80,100,0.2);  color:var(–muted); }
+.badge-today { background:rgba(255,61,61,0.18); color:var(–red); }
+.badge-older { background:rgba(60,80,100,0.2);  color:var(–muted); }
 
 #last-updated {
 text-align: center;
@@ -397,13 +396,9 @@ font-family: ‘Share Tech Mono’, monospace;
 font-size: 8px;
 color: var(–dim);
 letter-spacing: 1px;
-padding: 0 14px 14px;
+padding: 0 14px 20px;
 }
-
-.source-note a {
-color: var(–accent);
-text-decoration: none;
-}
+.source-note a { color: var(–accent); text-decoration: none; }
 </style>
 
 </head>
@@ -412,10 +407,10 @@ text-decoration: none;
 <header>
   <div class="header-top">
     <div class="brand">
-      <div class="brand-icon">🚨</div>
+      <div class="brand-icon">&#x1F6A8;</div>
       <div>
         <div class="brand-text">NORTH PORT CAD</div>
-        <div class="brand-sub">SARASOTA CO. DISPATCH · NPFD</div>
+        <div class="brand-sub">SARASOTA CO. 911 DISPATCH</div>
       </div>
     </div>
     <div class="header-right">
@@ -427,10 +422,10 @@ text-decoration: none;
 </header>
 
 <div class="stats-grid">
-  <div class="stat"><div class="stat-num red" id="s-today">--</div><div class="stat-label">Today</div></div>
-  <div class="stat"><div class="stat-num amber" id="s-fire">--</div><div class="stat-label">Fire</div></div>
-  <div class="stat"><div class="stat-num" id="s-traffic">--</div><div class="stat-label">Traffic</div></div>
-  <div class="stat"><div class="stat-num green" id="s-alarm">--</div><div class="stat-label">Alarms</div></div>
+  <div class="stat"><div class="stat-num red"   id="s-today">--</div><div class="stat-label">Today</div></div>
+  <div class="stat"><div class="stat-num amber"  id="s-fire">--</div><div class="stat-label">Fire</div></div>
+  <div class="stat"><div class="stat-num"        id="s-traffic">--</div><div class="stat-label">Traffic</div></div>
+  <div class="stat"><div class="stat-num green"  id="s-alarm">--</div><div class="stat-label">Alarms</div></div>
 </div>
 
 <div class="map-section">
@@ -457,9 +452,11 @@ text-decoration: none;
   <div class="state-screen"><div class="spinner"></div><span>ACQUIRING FEED</span></div>
 </div>
 <div id="last-updated"></div>
-<div class="source-note">Data: <a href="https://dispatchreporting.scgov.net" target="_blank">Sarasota County 911 Dispatch Reporting</a> -- NPFD incidents only</div>
+<div class="source-note">Source: <a href="https://dispatchreporting.scgov.net" target="_blank">Sarasota County 911 Dispatch</a> -- NPFD only</div>
 
 <script>
+  var WORKER_URL = "https://pulsepoint-proxy.yanks126.workers.dev";
+
   // Clock
   function tick() {
     document.getElementById("clock").textContent =
@@ -467,15 +464,15 @@ text-decoration: none;
   }
   setInterval(tick, 1000); tick();
 
-  // Map
+  // Map setup
   var NP_LAT = 27.0447, NP_LNG = -82.1426;
-  var map = L.map("map", { center:[NP_LAT, NP_LNG], zoom:12, zoomControl:true, attributionControl:false });
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:18 }).addTo(map);
+  var map = L.map("map", {center:[NP_LAT,NP_LNG], zoom:12, zoomControl:true, attributionControl:false});
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:18}).addTo(map);
 
   function makeIcon(bg, emoji) {
     return L.divIcon({
       className: "",
-      html: "<div style=\"width:30px;height:30px;background:" + bg + ";border:2px solid rgba(255,255,255,0.2);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.6)\"><span style=\"transform:rotate(45deg);font-size:12px;line-height:1\">" + emoji + "</span></div>",
+      html: "<div style=\"width:30px;height:30px;background:" + bg + ";border:2px solid rgba(255,255,255,0.2);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.6)\"><span style=\"transform:rotate(45deg);font-size:13px;line-height:1\">" + emoji + "</span></div>",
       iconSize:[30,30], iconAnchor:[15,30], popupAnchor:[0,-32]
     });
   }
@@ -497,22 +494,24 @@ text-decoration: none;
   var geocodeCache = {};
   var idCounter = 0;
 
-  function category(eventType) {
-    if (!eventType) return "other";
-    var t = eventType.toUpperCase();
-    if (/FIRE|BRUSH|EXPLOSION|STRUCTURE|SMOKE|HAZMAT|BURNING/.test(t)) return "fire";
+  function category(t) {
+    if (!t) return "other";
+    t = t.toUpperCase();
+    if (/FIRE|BRUSH|EXPLOSION|STRUCTURE|SMOKE|HAZMAT|BURNING|OUTSIDE FIRE|ELECTRICAL/.test(t)) return "fire";
     if (/TRAFFIC|CRASH|COLLISION|ACCIDENT|MVC/.test(t)) return "traffic";
-    if (/ALARM|CARBON/.test(t)) return "alarm";
+    if (/ALARM|CARBON|MONOXIDE/.test(t)) return "alarm";
     return "other";
   }
 
-  var CAT_EMOJI = { fire:"&#x1F525;", traffic:"&#x1F697;", alarm:"&#x26A0;", other:"&#x26A1;" };
-  var CAT_CLS   = { fire:"icon-fire", traffic:"icon-traffic", alarm:"icon-alarm", other:"icon-other" };
+  var CAT_EMOJI = {fire:"&#x1F525;", traffic:"&#x1F697;", alarm:"&#x26A0;", other:"&#x26A1;"};
+  var CAT_CLS   = {fire:"icon-fire", traffic:"icon-traffic", alarm:"icon-alarm", other:"icon-other"};
 
-  function isToday(dateStr) {
-    if (!dateStr) return false;
-    var today = new Date().toLocaleDateString("en-US", {month:"2-digit", day:"2-digit", year:"2-digit"});
-    return dateStr.includes(today) || dateStr === "TODAY";
+  function getTodayStr() {
+    var d = new Date();
+    var mm = String(d.getMonth()+1).padStart(2,"0");
+    var dd = String(d.getDate()).padStart(2,"0");
+    var yy = String(d.getFullYear()).slice(-2);
+    return mm + "/" + dd + "/" + yy;
   }
 
   function setStatus(msg, cls) {
@@ -521,21 +520,72 @@ text-decoration: none;
     el.textContent = msg;
   }
 
+  // Parse the HTML table from dispatchreporting.scgov.net
+  function parseDispatchHTML(html) {
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(html, "text/html");
+    var rows = doc.querySelectorAll("tr");
+    var incidents = [];
+    var currentDate = "";
+    var todayStr = getTodayStr();
+
+    rows.forEach(function(row) {
+      // Date header rows contain "Event Date:"
+      var fullText = row.textContent.trim();
+      if (fullText.indexOf("Event Date:") !== -1) {
+        // Extract date like 04/22/26
+        var match = fullText.match(/(\d{2}\/\d{2}\/\d{2})/);
+        if (match) currentDate = match[1];
+        return;
+      }
+
+      var cells = row.querySelectorAll("td");
+      if (cells.length < 7) return;
+
+      var time     = cells[0].textContent.trim() || cells[1].textContent.trim();
+      var event    = cells[2].textContent.trim();
+      var location = cells[3].textContent.trim();
+      var grid     = cells[4].textContent.trim();
+      var zone     = cells[5].textContent.trim();
+      var caseNum  = cells[6].textContent.trim();
+
+      // Only keep NPFD cases
+      if (!caseNum || caseNum.indexOf("NPFD") === -1) return;
+      if (!event || !location) return;
+
+      incidents.push({
+        date:      currentDate,
+        time:      time,
+        eventType: event,
+        location:  location,
+        grid:      grid,
+        zone:      zone,
+        caseNum:   caseNum,
+        isToday:   currentDate === todayStr,
+        _id:       "inc" + (++idCounter)
+      });
+    });
+
+    return incidents;
+  }
+
+  // Geocode via Nominatim
   async function geocode(address) {
     if (geocodeCache[address]) return geocodeCache[address];
     try {
-      var q = encodeURIComponent(address + ", North Port, FL, USA");
+      var q = encodeURIComponent(address + ", Sarasota County, FL, USA");
       var r = await fetch("https://nominatim.openstreetmap.org/search?q=" + q + "&format=json&limit=1", {
         headers: {"Accept-Language":"en", "User-Agent":"NorthPortCAD/1.0"}
       });
       var data = await r.json();
       if (data && data[0]) {
-        var result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        var result = {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)};
         geocodeCache[address] = result;
         return result;
       }
     } catch(e) {}
-    var result = { lat: NP_LAT + (Math.random()-0.5)*0.05, lng: NP_LNG + (Math.random()-0.5)*0.07 };
+    // Scatter around North Port if geocode fails
+    var result = {lat: NP_LAT + (Math.random()-0.5)*0.06, lng: NP_LNG + (Math.random()-0.5)*0.08};
     geocodeCache[address] = result;
     return result;
   }
@@ -548,32 +598,31 @@ text-decoration: none;
 
     for (var i = 0; i < incidents.length; i++) {
       var inc = incidents[i];
-      var addr = inc.location || "";
       if (!inc._lat) {
-        var c = await geocode(addr);
+        var c = await geocode(inc.location);
         inc._lat = c.lat;
         inc._lng = c.lng;
       }
       var cat = category(inc.eventType);
-      var isT = inc.isToday;
-      var iconKey = cat + (isT ? "_today" : "_older");
-      var icon = ICONS[iconKey] || ICONS["other_today"];
+      var suffix = inc.isToday ? "_today" : "_older";
+      var icon = ICONS[cat + suffix] || ICONS["other_today"];
 
       var marker = L.marker([inc._lat, inc._lng], {icon: icon})
         .bindPopup(
           "<div class=\"popup-type\">" + inc.eventType + "</div>" +
-          "<div class=\"popup-addr\">" + addr + "</div>" +
-          "<div class=\"popup-time\">" + inc.date + " " + inc.time + " -- " + inc.caseNum + "</div>"
+          "<div class=\"popup-addr\">" + inc.location + "</div>" +
+          "<div class=\"popup-time\">" + inc.date + " " + inc.time + "</div>"
         )
         .addTo(map);
 
-      marker._incId = inc._id;
-      marker.on("click", function(e) {
-        var mid = e.target._incId;
-        document.querySelectorAll(".inc-card").forEach(function(c) { c.classList.remove("highlighted"); });
-        var card = document.getElementById("card-" + mid);
-        if (card) { card.classList.add("highlighted"); card.scrollIntoView({behavior:"smooth", block:"nearest"}); }
-      });
+      (function(id) {
+        marker._incId = id;
+        marker.on("click", function() {
+          document.querySelectorAll(".inc-card").forEach(function(c) { c.classList.remove("highlighted"); });
+          var card = document.getElementById("card-" + id);
+          if (card) { card.classList.add("highlighted"); card.scrollIntoView({behavior:"smooth", block:"nearest"}); }
+        });
+      })(inc._id);
 
       mapMarkers.push(marker);
       bounds.push([inc._lat, inc._lng]);
@@ -588,25 +637,24 @@ text-decoration: none;
   function renderList(incidents) {
     var el = document.getElementById("incident-list");
     if (!incidents.length) {
-      el.innerHTML = "<div class=\"state-screen\"><span style=\"font-size:24px\">&#x1F4E1;</span><span>NO NORTH PORT INCIDENTS FOUND</span></div>";
+      el.innerHTML = "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x1F4E1;</span><span>NO NORTH PORT INCIDENTS FOUND</span></div>";
       renderMap([]);
       return;
     }
 
     el.innerHTML = incidents.map(function(inc) {
       var cat = category(inc.eventType);
-      var isT = inc.isToday;
-      return "<div class=\"inc-card " + (isT ? "is-today" : "is-older") + "\" id=\"card-" + inc._id + "\" onclick=\"focusOnMap('" + inc._id + "')\">" +
+      return "<div class=\"inc-card " + (inc.isToday ? "is-today" : "is-older") + "\" id=\"card-" + inc._id + "\" onclick=\"focusOnMap('" + inc._id + "')\">" +
         "<div class=\"inc-icon " + CAT_CLS[cat] + "\">" + CAT_EMOJI[cat] + "</div>" +
         "<div class=\"inc-body\">" +
           "<div class=\"inc-type\">" + inc.eventType + "</div>" +
           "<div class=\"inc-addr\">&#x1F4CD; " + inc.location + "</div>" +
-          "<div class=\"inc-case\">" + inc.caseNum + " &mdash; " + (inc.zone || "NPFD") + "</div>" +
+          "<div class=\"inc-case\">" + inc.caseNum + (inc.zone ? " &mdash; " + inc.zone : "") + "</div>" +
         "</div>" +
         "<div class=\"inc-meta\">" +
           "<div class=\"inc-time\">" + inc.time + "</div>" +
           "<div class=\"inc-date\">" + inc.date + "</div>" +
-          "<div class=\"status-badge " + (isT ? "badge-today" : "badge-older") + "\">" + (isT ? "TODAY" : "PRIOR") + "</div>" +
+          "<div class=\"status-badge " + (inc.isToday ? "badge-today" : "badge-older") + "\">" + (inc.isToday ? "TODAY" : "PRIOR") + "</div>" +
         "</div>" +
       "</div>";
     }).join("");
@@ -615,7 +663,10 @@ text-decoration: none;
   }
 
   function focusOnMap(id) {
-    var inc = allIncidents.find(function(i) { return i._id === id; });
+    var inc = null;
+    for (var i = 0; i < allIncidents.length; i++) {
+      if (allIncidents[i]._id === id) { inc = allIncidents[i]; break; }
+    }
     if (!inc) return;
     document.getElementById("map").scrollIntoView({behavior:"smooth", block:"start"});
     if (inc._lat) {
@@ -628,15 +679,14 @@ text-decoration: none;
   }
 
   function updateStats(list) {
-    var todayItems = list.filter(function(i) { return i.isToday; });
-    var fireItems  = list.filter(function(i) { return category(i.eventType) === "fire"; });
-    var traffItems = list.filter(function(i) { return category(i.eventType) === "traffic"; });
-    
-    document.getElementById("s-today").textContent   = todayItems.length;
-    var alarmItems = list.filter(function(i) { return category(i.eventType) === "alarm"; });
-    document.getElementById("s-alarm").textContent = alarmItems.length;
-    document.getElementById("s-fire").textContent    = fireItems.length;
-    document.getElementById("s-traffic").textContent = traffItems.length;
+    var today   = list.filter(function(i) { return i.isToday; }).length;
+    var fire    = list.filter(function(i) { return category(i.eventType) === "fire"; }).length;
+    var traffic = list.filter(function(i) { return category(i.eventType) === "traffic"; }).length;
+    var alarm   = list.filter(function(i) { return category(i.eventType) === "alarm"; }).length;
+    document.getElementById("s-today").textContent   = today;
+    document.getElementById("s-fire").textContent    = fire;
+    document.getElementById("s-traffic").textContent = traffic;
+    document.getElementById("s-alarm").textContent   = alarm;
   }
 
   function applyFilter() {
@@ -663,49 +713,25 @@ text-decoration: none;
       "<div class=\"state-screen\"><div class=\"spinner\"></div><span>ACQUIRING FEED</span></div>";
     setStatus("", "");
 
-    var prompt = "Fetch the page at https://dispatchreporting.scgov.net/ and extract ALL incidents where the Case number starts with NPFD (North Port Fire Department). Return ONLY valid JSON, no markdown, no explanation, in this exact format: {\"incidents\":[{\"date\":\"MM/DD/YY\",\"time\":\"HH:MM\",\"eventType\":\"EVENT TYPE\",\"location\":\"ADDRESS\",\"zone\":\"ZONE\",\"caseNum\":\"NPFDXXXXXXX\"}]} Include every NPFD row you find. If no NPFD incidents exist return {\"incidents\":[]}.";
-
     try {
-      var res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 2000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
+      var res = await fetch(WORKER_URL);
+      if (!res.ok) throw new Error("Worker returned HTTP " + res.status);
+      var html = await res.text();
 
-      var data = await res.json();
-      var text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("");
-      var clean = text.replace(/```json|```/g, "").trim();
-      var json = JSON.parse(clean);
-
-      var incidents = (json.incidents || []);
+      var incidents = parseDispatchHTML(html);
 
       if (!incidents.length) {
-        setStatus("No North Port incidents found in current feed", "warn");
+        setStatus("No NPFD incidents in current feed", "warn");
         allIncidents = [];
         updateStats([]);
         renderList([]);
-        document.getElementById("last-updated").textContent = "Last updated " + new Date().toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
-        return;
+      } else {
+        allIncidents = incidents;
+        updateStats(allIncidents);
+        applyFilter();
+        setStatus("Live -- Sarasota County 911 Dispatch -- NPFD incidents only", "good");
+        setTimeout(function() { setStatus("", ""); }, 5000);
       }
-
-      // Determine if today
-      var todayStr = new Date().toLocaleDateString("en-US", {month:"2-digit", day:"2-digit", year:"2-digit"});
-      incidents.forEach(function(inc) {
-        inc._id = "inc" + (++idCounter);
-        inc.isToday = inc.date && (inc.date === todayStr || inc.date === "TODAY");
-      });
-
-      allIncidents = incidents;
-      updateStats(allIncidents);
-      applyFilter();
-
-      setStatus("Live feed -- Sarasota County 911 Dispatch -- NPFD only", "good");
-      setTimeout(function() { setStatus("", ""); }, 4000);
 
       document.getElementById("last-updated").textContent =
         "Last updated " + new Date().toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
@@ -714,7 +740,7 @@ text-decoration: none;
       console.error(err);
       setStatus("Feed error: " + err.message, "error");
       document.getElementById("incident-list").innerHTML =
-        "<div class=\"state-screen\"><span style=\"font-size:24px\">&#x1F4E1;</span><span>FEED UNAVAILABLE -- TAP REFRESH</span></div>";
+        "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x1F4E1;</span><span>FEED UNAVAILABLE -- TAP REFRESH</span></div>";
     } finally {
       btn.classList.remove("spinning");
     }
