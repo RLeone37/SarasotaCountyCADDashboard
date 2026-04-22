@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>North Port — Live Incident Feed</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090f;
+    --surface: #0d1117;
+    --surface2: #111823;
+    --border: #1e2d40;
+    --accent: #00c8ff;
+    --accent2: #ff4d4d;
+    --accent3: #ffc940;
+    --accent4: #3dff8f;
+    --text: #c8daf0;
+    --muted: #4a6070;
+    --active-glow: 0 0 12px rgba(0,200,255,0.35);
+    --red-glow: 0 0 12px rgba(255,77,77,0.4);
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘Exo 2’, sans-serif;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* Animated scan-line overlay */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(
+0deg,
+transparent,
+transparent 2px,
+rgba(0,200,255,0.012) 2px,
+rgba(0,200,255,0.012) 4px
+);
+pointer-events: none;
+z-index: 9999;
+}
+
+/* –– HEADER –– */
+header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 18px 28px;
+background: linear-gradient(90deg, #060a12 0%, #0a1520 100%);
+border-bottom: 1px solid var(–border);
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+.logo-block {
+display: flex;
+align-items: center;
+gap: 14px;
+}
+
+.logo-icon {
+width: 38px; height: 38px;
+background: var(–accent2);
+clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+display: flex; align-items: center; justify-content: center;
+font-size: 18px;
+box-shadow: 0 0 16px rgba(255,77,77,0.5);
+flex-shrink: 0;
+animation: pulse-icon 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse-icon {
+0%, 100% { box-shadow: 0 0 16px rgba(255,77,77,0.5); }
+50% { box-shadow: 0 0 28px rgba(255,77,77,0.8); }
+}
+
+.logo-text {
+font-family: ‘Rajdhani’, sans-serif;
+font-weight: 700;
+font-size: 22px;
+letter-spacing: 3px;
+color: #fff;
+text-transform: uppercase;
+}
+
+.logo-sub {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 10px;
+color: var(–muted);
+letter-spacing: 2px;
+margin-top: 1px;
+}
+
+.header-right {
+display: flex;
+align-items: center;
+gap: 20px;
+}
+
+.live-badge {
+display: flex;
+align-items: center;
+gap: 7px;
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 11px;
+letter-spacing: 2px;
+color: var(–accent4);
+background: rgba(61,255,143,0.08);
+border: 1px solid rgba(61,255,143,0.2);
+padding: 5px 12px;
+border-radius: 2px;
+}
+
+.live-dot {
+width: 7px; height: 7px;
+background: var(–accent4);
+border-radius: 50%;
+animation: blink 1s step-end infinite;
+box-shadow: 0 0 6px var(–accent4);
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+#clock {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 13px;
+color: var(–accent);
+letter-spacing: 2px;
+}
+
+/* –– STATS BAR –– */
+.stats-bar {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 1px;
+background: var(–border);
+border-bottom: 1px solid var(–border);
+}
+
+.stat-cell {
+background: var(–surface);
+padding: 14px 20px;
+text-align: center;
+transition: background 0.3s;
+}
+
+.stat-num {
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 32px;
+font-weight: 700;
+line-height: 1;
+color: var(–accent);
+}
+
+.stat-num.red { color: var(–accent2); }
+.stat-num.amber { color: var(–accent3); }
+.stat-num.green { color: var(–accent4); }
+
+.stat-label {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2px;
+color: var(–muted);
+margin-top: 3px;
+text-transform: uppercase;
+}
+
+/* –– MAIN LAYOUT –– */
+.main {
+display: grid;
+grid-template-columns: 1fr 340px;
+gap: 0;
+min-height: calc(100vh - 120px);
+}
+
+/* –– INCIDENT LIST –– */
+.incidents-panel {
+border-right: 1px solid var(–border);
+overflow-y: auto;
+}
+
+.panel-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 14px 20px;
+border-bottom: 1px solid var(–border);
+background: var(–surface);
+position: sticky;
+top: 0;
+z-index: 10;
+}
+
+.panel-title {
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 13px;
+font-weight: 600;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–accent);
+}
+
+.filter-tabs {
+display: flex;
+gap: 6px;
+}
+
+.tab {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+letter-spacing: 1.5px;
+padding: 4px 10px;
+border: 1px solid var(–border);
+background: transparent;
+color: var(–muted);
+cursor: pointer;
+transition: all 0.2s;
+text-transform: uppercase;
+}
+
+.tab.active, .tab:hover {
+border-color: var(–accent);
+color: var(–accent);
+background: rgba(0,200,255,0.07);
+}
+
+/* –– INCIDENT CARD –– */
+.incident-card {
+display: grid;
+grid-template-columns: 56px 1fr auto;
+gap: 12px;
+align-items: start;
+padding: 14px 20px;
+border-bottom: 1px solid rgba(30,45,64,0.6);
+cursor: pointer;
+transition: background 0.15s;
+animation: slide-in 0.3s ease;
+}
+
+@keyframes slide-in {
+from { opacity: 0; transform: translateX(-8px); }
+to { opacity: 1; transform: none; }
+}
+
+.incident-card:hover { background: rgba(0,200,255,0.04); }
+
+.incident-card.active-call {
+background: rgba(255,77,77,0.05);
+border-left: 2px solid var(–accent2);
+}
+.incident-card.recent-call {
+border-left: 2px solid transparent;
+opacity: 0.75;
+}
+
+.incident-type-icon {
+width: 44px; height: 44px;
+border-radius: 4px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+flex-shrink: 0;
+border: 1px solid;
+}
+
+.icon-medical { background: rgba(255,77,77,0.12); border-color: rgba(255,77,77,0.3); }
+.icon-fire    { background: rgba(255,165,0,0.12);  border-color: rgba(255,165,0,0.3); }
+.icon-traffic { background: rgba(0,200,255,0.1);  border-color: rgba(0,200,255,0.25); }
+.icon-other   { background: rgba(100,100,120,0.15); border-color: rgba(100,100,120,0.3); }
+
+.incident-info { min-width: 0; }
+
+.incident-type {
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 14px;
+font-weight: 600;
+letter-spacing: 0.5px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.incident-addr {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 10px;
+color: var(–muted);
+margin-top: 3px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.incident-units {
+display: flex;
+flex-wrap: wrap;
+gap: 4px;
+margin-top: 6px;
+}
+
+.unit-tag {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 8px;
+letter-spacing: 1px;
+padding: 2px 6px;
+border: 1px solid var(–border);
+color: var(–muted);
+border-radius: 2px;
+}
+
+.incident-meta {
+text-align: right;
+flex-shrink: 0;
+}
+
+.incident-time {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 10px;
+color: var(–accent);
+}
+
+.status-badge {
+display: inline-block;
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 8px;
+letter-spacing: 1.5px;
+padding: 2px 6px;
+border-radius: 2px;
+margin-top: 4px;
+text-transform: uppercase;
+}
+
+.status-active  { background: rgba(255,77,77,0.2);  color: var(–accent2); }
+.status-recent  { background: rgba(80,80,100,0.2);  color: var(–muted); }
+
+/* –– SIDE PANEL –– */
+.side-panel {
+background: var(–surface);
+overflow-y: auto;
+}
+
+.side-section {
+padding: 18px 18px 0;
+margin-bottom: 18px;
+}
+
+.side-section-title {
+font-family: ‘Rajdhani’, sans-serif;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 3px;
+color: var(–muted);
+text-transform: uppercase;
+margin-bottom: 12px;
+padding-bottom: 8px;
+border-bottom: 1px solid var(–border);
+}
+
+/* Type breakdown bars */
+.type-row {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 8px;
+}
+
+.type-label {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: var(–muted);
+letter-spacing: 1px;
+min-width: 80px;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+.type-bar-bg {
+flex: 1;
+height: 4px;
+background: var(–border);
+border-radius: 2px;
+overflow: hidden;
+}
+
+.type-bar-fill {
+height: 100%;
+border-radius: 2px;
+transition: width 0.6s ease;
+}
+
+.type-count {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: var(–accent);
+min-width: 16px;
+text-align: right;
+}
+
+/* Timeline */
+.timeline-item {
+display: flex;
+gap: 10px;
+margin-bottom: 10px;
+align-items: flex-start;
+}
+
+.tl-time {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: var(–muted);
+min-width: 40px;
+}
+
+.tl-dot {
+width: 6px; height: 6px;
+border-radius: 50%;
+background: var(–accent);
+margin-top: 3px;
+flex-shrink: 0;
+}
+
+.tl-dot.red { background: var(–accent2); }
+
+.tl-text {
+font-family: ‘Exo 2’, sans-serif;
+font-size: 11px;
+color: var(–text);
+opacity: 0.8;
+line-height: 1.4;
+}
+
+/* Loading / Error */
+.state-screen {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-height: 300px;
+gap: 16px;
+color: var(–muted);
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 12px;
+letter-spacing: 2px;
+}
+
+.spinner {
+width: 36px; height: 36px;
+border: 2px solid var(–border);
+border-top-color: var(–accent);
+border-radius: 50%;
+animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-icon { font-size: 32px; }
+
+/* Grid lines decoration */
+.corner-decoration {
+position: absolute;
+width: 20px; height: 20px;
+border-color: var(–accent);
+border-style: solid;
+opacity: 0.4;
+}
+
+.refresh-btn {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+letter-spacing: 2px;
+padding: 5px 12px;
+border: 1px solid var(–border);
+background: transparent;
+color: var(–muted);
+cursor: pointer;
+transition: all 0.2s;
+text-transform: uppercase;
+}
+.refresh-btn:hover { border-color: var(–accent); color: var(–accent); }
+
+#last-updated {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: var(–muted);
+letter-spacing: 1px;
+}
+
+/* CORS note */
+.cors-note {
+background: rgba(255,201,64,0.07);
+border: 1px solid rgba(255,201,64,0.2);
+border-radius: 3px;
+padding: 10px 14px;
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 9px;
+color: var(–accent3);
+letter-spacing: 1px;
+line-height: 1.6;
+margin: 12px 18px;
+}
+
+@media (max-width: 700px) {
+.main { grid-template-columns: 1fr; }
+.side-panel { display: none; }
+.stats-bar { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <div class="logo-icon">🚨</div>
+    <div>
+      <div class="logo-text">North Port · CAD Feed</div>
+      <div class="logo-sub">SARASOTA COUNTY FIRE DEPARTMENT · PULSEPOINT</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE FEED</div>
+    <div id="clock">--:--:--</div>
+    <button class="refresh-btn" onclick="loadIncidents()">↻ REFRESH</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-cell">
+    <div class="stat-num red" id="stat-active">—</div>
+    <div class="stat-label">Active Calls</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num" id="stat-recent">—</div>
+    <div class="stat-label">Recent (24h)</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num amber" id="stat-medical">—</div>
+    <div class="stat-label">Medical</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-num green" id="stat-fire">—</div>
+    <div class="stat-label">Fire / Rescue</div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- LEFT: Incident list -->
+  <div class="incidents-panel">
+    <div class="panel-header">
+      <div class="panel-title">⬡ Incidents — North Port, FL</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="last-updated">Fetching…</span>
+        <div class="filter-tabs">
+          <button class="tab active" onclick="setFilter('all',this)">All</button>
+          <button class="tab" onclick="setFilter('active',this)">Active</button>
+          <button class="tab" onclick="setFilter('medical',this)">Medical</button>
+          <button class="tab" onclick="setFilter('fire',this)">Fire</button>
+        </div>
+      </div>
+    </div>
+    <div id="incident-list">
+      <div class="state-screen"><div class="spinner"></div><span>ACQUIRING FEED</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Side panel -->
+
+  <div class="side-panel">
+    <div class="cors-note">
+      ℹ PULSEPOINT FEED — Data sourced live from<br>
+      web.pulsepoint.org · Agency: SCFD<br>
+      Filtered to NORTH PORT addresses only<br>
+      Auto-refreshes every 60 seconds
+    </div>
+
+```
+<div class="side-section">
+  <div class="side-section-title">Incident Breakdown</div>
+  <div id="type-breakdown">
+    <div style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px">Loading…</div>
+  </div>
+</div>
+
+<div class="side-section">
+  <div class="side-section-title">Recent Activity Timeline</div>
+  <div id="timeline">
+    <div style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px">Loading…</div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ——— CLOCK ———
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ——— STATE ———
+let allIncidents = [];
+let currentFilter = 'all';
+
+// ——— UTILS ———
+function isNorthPort(addr) {
+  if (!addr) return false;
+  const a = addr.toUpperCase();
+  return a.includes('NORTH PORT') || a.includes('NORTHPORT') || a.includes('N PORT');
+}
+
+function getTypeCategory(type) {
+  if (!type) return 'other';
+  const t = type.toUpperCase();
+  if (t.includes('MEDICAL') || t.includes('CPR') || t.includes('CARDIAC') ||
+      t.includes('BREATHING') || t.includes('CHEST') || t.includes('STROKE') ||
+      t.includes('UNCONSCIOUS') || t.includes('FALL') || t.includes('SICK') ||
+      t.includes('TRAUMA') || t.includes('OVERDOSE') || t.includes('DIABETIC') ||
+      t.includes('SEIZURE') || t.includes('ALLERGIC') || t.includes('EMS') ||
+      t.includes('HEMORRHAGE') || t.includes('ALS') || t.includes('BLS') ||
+      t.includes('INJURY')) return 'medical';
+  if (t.includes('FIRE') || t.includes('SMOKE') || t.includes('BRUSH') ||
+      t.includes('VEHICLE FIRE') || t.includes('EXPLOSION') || t.includes('STRUCTURE') ||
+      t.includes('RESCUE') || t.includes('HAZMAT') || t.includes('GAS')) return 'fire';
+  if (t.includes('TRAFFIC') || t.includes('ACCIDENT') || t.includes('COLLISION') ||
+      t.includes('MVC') || t.includes('CRASH') || t.includes('ROAD')) return 'traffic';
+  return 'other';
+}
+
+function getCategoryIcon(cat) {
+  return { medical:'🩺', fire:'🔥', traffic:'🚗', other:'⚡' }[cat] || '⚡';
+}
+
+function getCategoryClass(cat) {
+  return { medical:'icon-medical', fire:'icon-fire', traffic:'icon-traffic', other:'icon-other' }[cat] || 'icon-other';
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr.substring(0,5) || '—';
+    return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  } catch { return '—'; }
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    const diff = Math.floor((Date.now() - d)/60000);
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff}m ago`;
+    return `${Math.floor(diff/60)}h ${diff%60}m ago`;
+  } catch { return ''; }
+}
+
+// ——— RENDER ———
+function renderIncidents(incidents) {
+  const list = document.getElementById('incident-list');
+  if (!incidents.length) {
+    list.innerHTML = `<div class="state-screen"><div class="error-icon">📡</div><span>NO NORTH PORT INCIDENTS FOUND</span></div>`;
+    return;
+  }
+
+  list.innerHTML = incidents.map(inc => {
+    const cat = getTypeCategory(inc.Call_Type_Description || inc.type || '');
+    const isActive = inc.status === 'active';
+    const addr = inc.Full_Address || inc.address || 'ADDRESS UNKNOWN';
+    const type = inc.Call_Type_Description || inc.type || 'UNKNOWN INCIDENT';
+    const units = inc.units || [];
+    const time = formatTime(inc.Call_Received_DateTime || inc.receivedTime);
+    const rel = relativeTime(inc.Call_Received_DateTime || inc.receivedTime);
+
+    return `
+    <div class="incident-card ${isActive ? 'active-call' : 'recent-call'}">
+      <div class="incident-type-icon ${getCategoryClass(cat)}">${getCategoryIcon(cat)}</div>
+      <div class="incident-info">
+        <div class="incident-type">${type}</div>
+        <div class="incident-addr">📍 ${addr}</div>
+        <div class="incident-units">
+          ${units.slice(0,6).map(u => `<span class="unit-tag">${u.UnitID || u.id || u}</span>`).join('')}
+        </div>
+      </div>
+      <div class="incident-meta">
+        <div class="incident-time">${time}</div>
+        <div class="incident-time" style="font-size:8px;color:var(--muted)">${rel}</div>
+        <div class="status-badge ${isActive ? 'status-active' : 'status-recent'}">${isActive ? 'ACTIVE' : 'RECENT'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSidePanel(incidents) {
+  // Type breakdown
+  const counts = {};
+  incidents.forEach(inc => {
+    const type = inc.Call_Type_Description || inc.type || 'Unknown';
+    const short = type.length > 22 ? type.substring(0,22)+'…' : type;
+    counts[short] = (counts[short]||0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const max = sorted[0]?.[1] || 1;
+  const colors = ['#00c8ff','#ff4d4d','#ffc940','#3dff8f','#a78bfa','#f97316','#ec4899','#38bdf8'];
+
+  document.getElementById('type-breakdown').innerHTML = sorted.map(([t,c],i) => `
+    <div class="type-row">
+      <div class="type-label">${t}</div>
+      <div class="type-bar-bg">
+        <div class="type-bar-fill" style="width:${Math.round(c/max*100)}%;background:${colors[i%colors.length]}"></div>
+      </div>
+      <div class="type-count">${c}</div>
+    </div>`).join('');
+
+  // Timeline (last 8)
+  const timelined = [...incidents]
+    .filter(i => i.Call_Received_DateTime || i.receivedTime)
+    .sort((a,b) => new Date(b.Call_Received_DateTime||b.receivedTime) - new Date(a.Call_Received_DateTime||a.receivedTime))
+    .slice(0,8);
+
+  document.getElementById('timeline').innerHTML = timelined.map(inc => {
+    const cat = getTypeCategory(inc.Call_Type_Description || inc.type || '');
+    const type = inc.Call_Type_Description || inc.type || 'Incident';
+    const time = formatTime(inc.Call_Received_DateTime || inc.receivedTime);
+    return `
+    <div class="timeline-item">
+      <div class="tl-time">${time}</div>
+      <div class="tl-dot ${cat === 'medical' || cat === 'fire' ? 'red' : ''}"></div>
+      <div class="tl-text">${type}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(all) {
+  const active = all.filter(i=>i.status==='active');
+  const recent = all.filter(i=>i.status==='recent');
+  const medical = all.filter(i=>getTypeCategory(i.Call_Type_Description||i.type||'') === 'medical');
+  const fire    = all.filter(i=>['fire','traffic'].includes(getTypeCategory(i.Call_Type_Description||i.type||'')));
+
+  document.getElementById('stat-active').textContent  = active.length;
+  document.getElementById('stat-recent').textContent  = recent.length;
+  document.getElementById('stat-medical').textContent = medical.length;
+  document.getElementById('stat-fire').textContent    = fire.length;
+}
+
+function applyFilter() {
+  let filtered = allIncidents;
+  if (currentFilter === 'active')  filtered = allIncidents.filter(i=>i.status==='active');
+  if (currentFilter === 'medical') filtered = allIncidents.filter(i=>getTypeCategory(i.Call_Type_Description||i.type||'')==='medical');
+  if (currentFilter === 'fire')    filtered = allIncidents.filter(i=>['fire','traffic'].includes(getTypeCategory(i.Call_Type_Description||i.type||'')));
+  renderIncidents(filtered);
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+
+// ——— FETCH via CORS proxy → PulsePoint ———
+// PulsePoint's public endpoint for SCFD (Sarasota County Fire Dept)
+// Uses allorigins.win as a CORS proxy
+async function loadIncidents() {
+  const list = document.getElementById('incident-list');
+  list.innerHTML = `<div class="state-screen"><div class="spinner"></div><span>ACQUIRING FEED</span></div>`;
+
+  // Try multiple known agency IDs for Sarasota County / North Port
+  // North Port Fire Rescue sometimes listed separately
+  const agencyIds = ['SCFD', 'NPFR'];
+  let combinedActive = [];
+  let combinedRecent = [];
+  let fetched = false;
+
+  for (const agencyId of agencyIds) {
+    const targetUrl = `https://web.pulsepoint.org/db/giba.php?agency_id=${agencyId}`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) continue;
+      const wrapper = await res.json();
+      const data = JSON.parse(wrapper.contents || '{}');
+
+      // PulsePoint returns: { incidents: { active: [...], recent: [...] } }
+      const active = data?.incidents?.active || data?.active || [];
+      const recent = data?.incidents?.recent || data?.recent || [];
+      combinedActive.push(...active);
+      combinedRecent.push(...recent);
+      fetched = true;
+    } catch(e) {
+      console.warn(`Failed ${agencyId}:`, e.message);
+    }
+  }
+
+  if (!fetched) {
+    // Fallback: show demo data with explanation
+    showDemoData();
+    return;
+  }
+
+  // Tag status
+  combinedActive.forEach(i => { i.status = 'active'; });
+  combinedRecent.forEach(i => { i.status = 'recent'; });
+
+  // Filter North Port
+  const npActive = combinedActive.filter(i => isNorthPort(i.Full_Address || i.address || ''));
+  const npRecent = combinedRecent.filter(i => isNorthPort(i.Full_Address || i.address || ''));
+  allIncidents = [...npActive, ...npRecent];
+
+  if (allIncidents.length === 0) {
+    // No NP filter matches — possibly no active NP calls right now; show all with note
+    showAllWithNote(combinedActive, combinedRecent);
+    return;
+  }
+
+  updateStats(allIncidents);
+  renderSidePanel(allIncidents);
+  applyFilter();
+
+  document.getElementById('last-updated').textContent =
+    'Updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function showAllWithNote(active, recent) {
+  active.forEach(i => { i.status = 'active'; });
+  recent.forEach(i => { i.status = 'recent'; });
+  allIncidents = [...active, ...recent];
+
+  updateStats(allIncidents);
+  renderSidePanel(allIncidents);
+
+  const list = document.getElementById('incident-list');
+  const existing = list.innerHTML;
+  applyFilter();
+
+  // Prepend a note
+  const note = document.createElement('div');
+  note.style.cssText = 'padding:10px 20px;background:rgba(255,201,64,0.06);border-bottom:1px solid rgba(255,201,64,0.15);font-family:Share Tech Mono,monospace;font-size:9px;color:#ffc940;letter-spacing:1.5px';
+  note.textContent = '⚠ No active North Port calls at this moment — showing all Sarasota County incidents';
+  document.getElementById('incident-list').prepend(note);
+
+  document.getElementById('last-updated').textContent =
+    'Updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function showDemoData() {
+  // Realistic demo incidents for North Port when API is unreachable
+  const demoActive = [
+    { status:'active', Call_Type_Description:'Medical Emergency', Full_Address:'3400 TAMIAMI TRL, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-8*60000).toISOString(), units:[{UnitID:'R81'},{UnitID:'E81'}] },
+    { status:'active', Call_Type_Description:'Structure Fire', Full_Address:'1220 BISCAYNE DR, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-22*60000).toISOString(), units:[{UnitID:'E82'},{UnitID:'E85'},{UnitID:'BC4'}] },
+    { status:'active', Call_Type_Description:'Traffic Collision', Full_Address:'7800 W PRICE BLVD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-5*60000).toISOString(), units:[{UnitID:'E83'},{UnitID:'R83'}] },
+  ];
+  const demoRecent = [
+    { status:'recent', Call_Type_Description:'Cardiac Arrest', Full_Address:'550 CRANBERRY BLVD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-95*60000).toISOString(), units:[{UnitID:'R84'},{UnitID:'E84'}] },
+    { status:'recent', Call_Type_Description:'Fall Victim', Full_Address:'4390 SALFORD BLVD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-130*60000).toISOString(), units:[{UnitID:'R81'}] },
+    { status:'recent', Call_Type_Description:'Brush Fire', Full_Address:'9000 TOLEDO BLADE BLVD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-200*60000).toISOString(), units:[{UnitID:'E86'},{UnitID:'Brush 86'}] },
+    { status:'recent', Call_Type_Description:'Medical Emergency', Full_Address:'1800 PEACHLAND BLVD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-240*60000).toISOString(), units:[{UnitID:'R82'}] },
+    { status:'recent', Call_Type_Description:'Vehicle Fire', Full_Address:'US-41 & BORDER RD, NORTH PORT, FL', Call_Received_DateTime: new Date(Date.now()-310*60000).toISOString(), units:[{UnitID:'E83'},{UnitID:'E85'}] },
+  ];
+
+  allIncidents = [...demoActive, ...demoRecent];
+  updateStats(allIncidents);
+  renderSidePanel(allIncidents);
+  applyFilter();
+
+  const list = document.getElementById('incident-list');
+  const note = document.createElement('div');
+  note.style.cssText = 'padding:10px 20px;background:rgba(255,77,77,0.06);border-bottom:1px solid rgba(255,77,77,0.15);font-family:Share Tech Mono,monospace;font-size:9px;color:#ff4d4d;letter-spacing:1.5px';
+  note.textContent = '⚠ CORS PROXY UNAVAILABLE — Displaying sample data. Open in browser with extension or hosted server for live feed.';
+  list.prepend(note);
+
+  document.getElementById('last-updated').textContent = 'DEMO MODE';
+}
+
+// ——— AUTO REFRESH every 60s ———
+loadIncidents();
+setInterval(loadIncidents, 60000);
+</script>
+
+</body>
+</html>
