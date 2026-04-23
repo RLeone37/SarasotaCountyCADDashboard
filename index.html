@@ -56,11 +56,12 @@
 
   /* ===== HEADER ===== */
   header {
-    position: sticky; top: 0; z-index: 1000;
     background: linear-gradient(180deg, #0a1828 0%, #0c1e30 100%);
     border-bottom: 1px solid var(--border2);
     padding: 14px 20px;
     box-shadow: 0 2px 30px rgba(0,180,255,0.07);
+    flex-shrink: 0;
+    position: relative;
   }
 
   header::before {
@@ -253,13 +254,16 @@
   .main-layout {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 180px);
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1;
     overflow: hidden;
   }
 
-  /* Left: map column */
+  /* Left: map column — full height minus the top bars */
   .map-col {
     width: 42%;
     flex-shrink: 0;
@@ -267,6 +271,12 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
+  }
+
+  /* The top bars (header, stats, agency) sit above the main-layout via padding trick */
+  body {
+    padding-top: 0;
   }
 
   .map-col .map-section {
@@ -274,12 +284,13 @@
     display: flex;
     flex-direction: column;
     border-bottom: none;
+    overflow: hidden;
   }
 
   .map-col #map {
     flex: 1;
     height: auto !important;
-    min-height: 300px;
+    min-height: 0;
   }
 
   /* Right: incident list column — scrolls independently */
@@ -287,18 +298,38 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100%;
+    overflow: hidden;
     min-width: 0;
   }
 
-  /* Mobile: stack vertically */
+  /* The incident list itself scrolls, filter bar stays fixed at top of column */
+  .filter-bar {
+    flex-shrink: 0;
+  }
+
+  #status-bar {
+    flex-shrink: 0;
+  }
+
+  #incident-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .list-footer {
+    flex-shrink: 0;
+  }
+
+  /* Mobile: stack vertically, restore normal scroll */
   @media (max-width: 768px) {
     .main-layout {
+      position: relative;
       flex-direction: column;
       height: auto;
       overflow: visible;
+      top: auto; left: auto; right: auto; bottom: auto;
     }
 
     .map-col {
@@ -306,10 +337,20 @@
       height: auto;
       border-right: none;
       border-bottom: 1px solid var(--border2);
+      overflow: visible;
     }
 
     .map-col #map {
       height: 260px !important;
+    }
+
+    .list-col {
+      overflow: visible;
+      height: auto;
+    }
+
+    #incident-list {
+      overflow: visible;
     }
   }
     font-family: 'Share Tech Mono', monospace; font-size: 11px;
@@ -449,45 +490,44 @@
 <body>
 <div class="vignette"></div>
 
-<header>
-  <div class="header-row1">
-    <div class="brand">
-      <div class="brand-shield">&#x1F6A8;</div>
-      <div>
-        <div class="brand-text">SARASOTA CO. CAD</div>
-        <div class="brand-sub">911 DISPATCH // LIVE FEED</div>
-      </div>
-    </div>
-  </div>
-  <div class="header-row2">
-    <div class="live-pill"><div class="live-dot"></div>ONLINE</div>
-    <div id="clock">--:--:--</div>
-    <button class="refresh-btn" id="refresh-btn" onclick="loadIncidents()">&#x21BB;</button>
-  </div>
-</header>
-
-<div class="stats-grid">
-  <div class="stat"><div class="stat-num red"   id="s-today">--</div><div class="stat-label">Today</div></div>
-  <div class="stat"><div class="stat-num amber"  id="s-fire">--</div><div class="stat-label">Fire</div></div>
-  <div class="stat"><div class="stat-num"        id="s-traffic">--</div><div class="stat-label">Traffic</div></div>
-  <div class="stat"><div class="stat-num green"  id="s-total">--</div><div class="stat-label">Total</div></div>
-</div>
-
-<!-- Agency filters -->
-<div class="agency-bar" id="agency-bar">
-  <button class="agency-btn active" onclick="setAgency('all',this)">All</button>
-  <button class="agency-btn npfd"  onclick="setAgency('npfd',this)">N. Port</button>
-  <button class="agency-btn scfd"  onclick="setAgency('scfd',this)">SCFD</button>
-  <button class="agency-btn vfd"   onclick="setAgency('vfd',this)">Venice</button>
-  <button class="agency-btn efd"   onclick="setAgency('efd',this)">Englewood</button>
-  <button class="agency-btn nvfd"  onclick="setAgency('nvfd',this)">Nokomis</button>
-  <button class="agency-btn other" onclick="setAgency('other',this)">Other</button>
-</div>
-
 <div class="main-layout">
 
-  <!-- LEFT: Map column -->
+  <!-- LEFT: Map column (header + stats + agency bar + map) -->
   <div class="map-col">
+    <header>
+      <div class="header-row1">
+        <div class="brand">
+          <div class="brand-shield">&#x1F6A8;</div>
+          <div>
+            <div class="brand-text">SARASOTA CO. CAD</div>
+            <div class="brand-sub">911 DISPATCH // LIVE FEED</div>
+          </div>
+        </div>
+      </div>
+      <div class="header-row2">
+        <div class="live-pill"><div class="live-dot"></div>ONLINE</div>
+        <div id="clock">--:--:--</div>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadIncidents()">&#x21BB;</button>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-num red"   id="s-today">--</div><div class="stat-label">Today</div></div>
+      <div class="stat"><div class="stat-num amber"  id="s-fire">--</div><div class="stat-label">Fire</div></div>
+      <div class="stat"><div class="stat-num"        id="s-traffic">--</div><div class="stat-label">Traffic</div></div>
+      <div class="stat"><div class="stat-num green"  id="s-total">--</div><div class="stat-label">Total</div></div>
+    </div>
+
+    <div class="agency-bar" id="agency-bar">
+      <button class="agency-btn active" onclick="setAgency('all',this)">All</button>
+      <button class="agency-btn npfd"  onclick="setAgency('npfd',this)">N. Port</button>
+      <button class="agency-btn scfd"  onclick="setAgency('scfd',this)">SCFD</button>
+      <button class="agency-btn vfd"   onclick="setAgency('vfd',this)">Venice</button>
+      <button class="agency-btn efd"   onclick="setAgency('efd',this)">Englewood</button>
+      <button class="agency-btn nvfd"  onclick="setAgency('nvfd',this)">Nokomis</button>
+      <button class="agency-btn other" onclick="setAgency('other',this)">Other</button>
+    </div>
+
     <div class="map-section">
       <div class="map-header">
         <div class="map-title">Sarasota County, FL</div>
@@ -516,8 +556,10 @@
     <div id="incident-list">
       <div class="state-screen"><div class="spinner"></div><span>ACQUIRING FEED...</span></div>
     </div>
-    <div id="last-updated"></div>
-    <div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a></div>
+    <div class="list-footer">
+      <div id="last-updated"></div>
+      <div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a></div>
+    </div>
   </div>
 
 </div>
@@ -721,18 +763,22 @@
            lng >= SC_BOUNDS.minLng && lng <= SC_BOUNDS.maxLng;
   }
 
+  function sleep(ms) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+  }
+
   async function geocode(address) {
     if (geocodeCache[address] !== undefined) return geocodeCache[address];
     try {
-      // Format address — convert intersections slash to AND
-      var formatted = address.trim().replace(/\s*\/\s*/g, " AND ") + ", Sarasota County, FL, USA";
+      // Small delay to avoid Nominatim rate limiting (max 1 req/sec)
+      await sleep(300);
+      var formatted = address.trim().replace(/\s*\/\s*/g, " AND ") + ", Sarasota County, FL";
       var url = "https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(formatted) +
                 "&format=json&limit=5&countrycodes=us";
       var r = await fetch(url, {
-        headers: {"Accept-Language":"en", "User-Agent":"SarasotaCountyCAD/1.0"}
+        headers: {"Accept-Language":"en", "User-Agent":"SarasotaCAD/2.0"}
       });
       var data = await r.json();
-      // Take first result within the region
       for (var i = 0; i < data.length; i++) {
         var lat = parseFloat(data[i].lat);
         var lng = parseFloat(data[i].lon);
@@ -759,13 +805,14 @@
       var inc = mappable[i];
       if (!inc._lat) {
         var c = await geocode(inc.location);
-        if (!c) continue; // skip — couldn't find a valid location
+        if (!c) continue;
         inc._lat = c.lat;
         inc._lng = c.lng;
       }
       var cat = category(inc.eventType);
       var suffix = inc.isToday ? "_today" : "_older";
-      var icon = ICONS[cat + suffix] || ICONS["other_today"];
+      var iconKey = cat + suffix;
+      var icon = ICONS[iconKey] || ICONS["other_today"];
 
       var marker = L.marker([inc._lat, inc._lng], {icon: icon})
         .bindPopup(
