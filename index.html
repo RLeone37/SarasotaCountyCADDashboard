@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>North Port CAD Feed</title>
+<title>Sarasota County CAD Feed</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -26,330 +25,369 @@
     --dim:     #2a4a66;
   }
 
-- { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
 
-body {
-background: var(–bg);
-color: var(–text);
-font-family: ‘Barlow Condensed’, sans-serif;
-min-height: 100vh;
-overflow-x: hidden;
--webkit-font-smoothing: antialiased;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
 
-/* Grid background */
-body::before {
-content: ‘’;
-position: fixed; inset: 0;
-background-image:
-linear-gradient(rgba(0,180,255,0.04) 1px, transparent 1px),
-linear-gradient(90deg, rgba(0,180,255,0.04) 1px, transparent 1px);
-background-size: 40px 40px;
-pointer-events: none; z-index: 0;
-}
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,180,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
 
-/* Scanlines */
-body::after {
-content: ‘’;
-position: fixed; inset: 0;
-background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
-pointer-events: none; z-index: 9998;
-}
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+    pointer-events: none; z-index: 9998;
+  }
 
-/* Vignette */
-.vignette {
-position: fixed; inset: 0;
-background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
-pointer-events: none; z-index: 9997;
-}
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+    pointer-events: none; z-index: 9997;
+  }
 
-/* ===== HEADER ===== */
-header {
-position: sticky; top: 0; z-index: 1000;
-background: linear-gradient(180deg, #0a1828 0%, #0c1e30 100%);
-border-bottom: 1px solid var(–border2);
-padding: 10px 14px;
-box-shadow: 0 2px 30px rgba(0,180,255,0.07);
-}
+  /* ===== HEADER ===== */
+  header {
+    position: sticky; top: 0; z-index: 1000;
+    background: linear-gradient(180deg, #0a1828 0%, #0c1e30 100%);
+    border-bottom: 1px solid var(--border2);
+    padding: 10px 14px;
+    box-shadow: 0 2px 30px rgba(0,180,255,0.07);
+  }
 
-header::before {
-content: ‘’;
-position: absolute; top: 0; left: 0; right: 0; height: 2px;
-background: linear-gradient(90deg, transparent, var(–accent), var(–red), var(–accent), transparent);
-animation: topline 4s ease-in-out infinite;
-}
+  header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--red), var(--accent), transparent);
+    animation: topline 4s ease-in-out infinite;
+  }
 
-@keyframes topline { 0%,100%{opacity:0.5} 50%{opacity:1} }
+  @keyframes topline { 0%,100%{opacity:0.5} 50%{opacity:1} }
 
-.header-row1 { display: flex; align-items: center; gap: 10px; }
+  .header-row1 { display: flex; align-items: center; gap: 10px; }
 
-.header-row2 {
-display: flex; align-items: center; justify-content: flex-end;
-gap: 8px; margin-top: 8px; padding-top: 8px;
-border-top: 1px solid var(–border);
-}
+  .header-row2 {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 8px; margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
 
-.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
-.brand-shield {
-width: 34px; height: 34px; flex-shrink: 0;
-background: linear-gradient(135deg, var(–red2), var(–red));
-clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-display: flex; align-items: center; justify-content: center;
-font-size: 15px;
-animation: shield-pulse 2.5s ease-in-out infinite;
-}
+  .brand-shield {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--red2), var(--red));
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    animation: shield-pulse 2.5s ease-in-out infinite;
+  }
 
-@keyframes shield-pulse {
-0%,100% { box-shadow: 0 0 16px rgba(255,32,32,0.5), 0 0 40px rgba(255,32,32,0.2); }
-50%      { box-shadow: 0 0 24px rgba(255,32,32,0.8), 0 0 60px rgba(255,32,32,0.4); }
-}
+  @keyframes shield-pulse {
+    0%,100% { box-shadow: 0 0 16px rgba(255,58,58,0.5), 0 0 40px rgba(255,58,58,0.2); }
+    50%      { box-shadow: 0 0 24px rgba(255,58,58,0.8), 0 0 60px rgba(255,58,58,0.4); }
+  }
 
-.brand-text {
-font-family: ‘Orbitron’, sans-serif; font-weight: 900;
-font-size: 14px; letter-spacing: 3px; color: var(–text2);
-text-shadow: 0 0 20px rgba(0,212,255,0.4); white-space: nowrap;
-}
+  .brand-text {
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    font-size: 14px; letter-spacing: 3px; color: var(--text2);
+    text-shadow: 0 0 20px rgba(0,212,255,0.4); white-space: nowrap;
+  }
 
-.brand-sub {
-font-family: ‘Share Tech Mono’, monospace;
-font-size: 7px; letter-spacing: 2px; color: var(–muted);
-margin-top: 1px; white-space: nowrap;
-}
+  .brand-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 7px; letter-spacing: 2px; color: var(--muted);
+    margin-top: 1px; white-space: nowrap;
+  }
 
-.live-pill {
-display: flex; align-items: center; gap: 5px;
-background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.3);
-padding: 4px 8px; font-family: ‘Share Tech Mono’, monospace;
-font-size: 8px; letter-spacing: 2px; color: var(–green);
-text-shadow: 0 0 8px var(–green); box-shadow: 0 0 12px rgba(0,255,136,0.08);
-}
+  .live-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.3);
+    padding: 4px 8px; font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; letter-spacing: 2px; color: var(--green);
+    text-shadow: 0 0 8px var(--green);
+  }
 
-.live-dot {
-width: 5px; height: 5px; background: var(–green); border-radius: 50%;
-box-shadow: 0 0 6px var(–green); animation: blink 0.8s step-end infinite;
-}
+  .live-dot {
+    width: 5px; height: 5px; background: var(--green); border-radius: 50%;
+    box-shadow: 0 0 6px var(--green); animation: blink 0.8s step-end infinite;
+  }
 
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-#clock {
-font-family: ‘Orbitron’, sans-serif; font-size: 13px; font-weight: 600;
-color: var(–accent); letter-spacing: 2px;
-text-shadow: 0 0 12px rgba(0,212,255,0.6);
-}
+  #clock {
+    font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--accent); letter-spacing: 2px;
+    text-shadow: 0 0 12px rgba(0,212,255,0.6);
+  }
 
-.refresh-btn {
-background: rgba(0,180,255,0.05); border: 1px solid var(–border2);
-color: var(–muted); font-family: ‘Share Tech Mono’, monospace;
-font-size: 14px; padding: 5px 10px; cursor: pointer; transition: all 0.2s; line-height: 1;
-}
-.refresh-btn:hover, .refresh-btn:active {
-border-color: var(–accent); color: var(–accent);
-box-shadow: 0 0 12px rgba(0,212,255,0.2);
-}
-.refresh-btn.spinning { animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+  .refresh-btn {
+    background: rgba(0,180,255,0.05); border: 1px solid var(--border2);
+    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    font-size: 14px; padding: 5px 10px; cursor: pointer; transition: all 0.2s; line-height: 1;
+  }
+  .refresh-btn:hover, .refresh-btn:active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.2); }
+  .refresh-btn.spinning { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===== STATS ===== */
-.stats-grid {
-display: grid; grid-template-columns: repeat(4, 1fr);
-background: var(–surface); border-bottom: 1px solid var(–border2);
-position: relative; z-index: 1;
-}
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: var(--surface); border-bottom: 1px solid var(--border2);
+    position: relative; z-index: 1;
+  }
 
-.stat {
-padding: 10px 6px; text-align: center;
-border-right: 1px solid var(–border); position: relative;
-}
-.stat:last-child { border-right: none; }
+  .stat { padding: 10px 6px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
 
-.stat-num {
-font-family: ‘Orbitron’, sans-serif; font-size: 28px; font-weight: 900;
-line-height: 1; color: var(–accent);
-text-shadow: 0 0 20px rgba(0,212,255,0.5); transition: all 0.4s;
-}
-.stat-num.red   { color: var(–red);   text-shadow: 0 0 20px rgba(255,32,32,0.6); }
-.stat-num.amber { color: var(–amber); text-shadow: 0 0 20px rgba(255,170,0,0.5); }
-.stat-num.green { color: var(–green); text-shadow: 0 0 20px rgba(0,255,136,0.5); }
+  .stat-num {
+    font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900;
+    line-height: 1; color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5); transition: all 0.4s;
+  }
+  .stat-num.red   { color: var(--red);   text-shadow: 0 0 20px rgba(255,58,58,0.6); }
+  .stat-num.amber { color: var(--amber); text-shadow: 0 0 20px rgba(255,187,0,0.5); }
+  .stat-num.green { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.5); }
 
-.stat-label {
-font-family: ‘Share Tech Mono’, monospace; font-size: 7px;
-letter-spacing: 2px; color: var(–muted); margin-top: 3px; text-transform: uppercase;
-}
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace; font-size: 7px;
+    letter-spacing: 2px; color: var(--muted); margin-top: 3px; text-transform: uppercase;
+  }
 
-/* ===== MAP ===== */
-.map-section { border-bottom: 1px solid var(–border2); position: relative; z-index: 1; }
+  /* ===== AGENCY FILTER ROW ===== */
+  .agency-bar {
+    display: flex; background: rgba(8,18,32,0.9); border-bottom: 1px solid var(--border2);
+    overflow-x: auto; scrollbar-width: none; position: relative; z-index: 1;
+    padding: 0 2px;
+  }
+  .agency-bar::-webkit-scrollbar { display: none; }
 
-.map-header {
-display: flex; align-items: center; justify-content: space-between;
-padding: 7px 14px; background: rgba(0,10,20,0.9); border-bottom: 1px solid var(–border);
-}
+  .agency-btn {
+    flex-shrink: 0; padding: 7px 10px;
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
 
-.map-title {
-font-family: ‘Orbitron’, sans-serif; font-size: 8px; font-weight: 600;
-letter-spacing: 3px; color: var(–accent2); text-transform: uppercase;
-}
+  .agency-btn.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+    text-shadow: 0 0 8px rgba(0,212,255,0.4);
+  }
 
-.map-legend { display: flex; gap: 12px; align-items: center; }
+  .agency-btn.npfd.active  { color: #ff6060; border-bottom-color: #ff6060; background: rgba(255,60,60,0.05); }
+  .agency-btn.scfd.active  { color: var(--accent); border-bottom-color: var(--accent); }
+  .agency-btn.vfd.active   { color: #60c0ff; border-bottom-color: #60c0ff; background: rgba(96,192,255,0.05); }
+  .agency-btn.efd.active   { color: var(--amber); border-bottom-color: var(--amber); background: rgba(255,187,0,0.05); }
+  .agency-btn.nvfd.active  { color: #80ff80; border-bottom-color: #80ff80; background: rgba(128,255,128,0.05); }
+  .agency-btn.other.active { color: #c080ff; border-bottom-color: #c080ff; background: rgba(192,128,255,0.05); }
 
-.legend-item {
-display: flex; align-items: center; gap: 5px;
-font-family: ‘Share Tech Mono’, monospace; font-size: 8px;
-letter-spacing: 1px; color: var(–muted);
-}
+  /* ===== MAP ===== */
+  .map-section { border-bottom: 1px solid var(--border2); position: relative; z-index: 1; }
 
-.legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .map-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 14px; background: rgba(0,10,20,0.9); border-bottom: 1px solid var(--border);
+  }
 
-#map { height: 260px; width: 100%; background: #020810; z-index: 1; }
+  .map-title {
+    font-family: 'Orbitron', sans-serif; font-size: 8px; font-weight: 600;
+    letter-spacing: 3px; color: var(--accent2); text-transform: uppercase;
+  }
 
-.leaflet-tile-pane { filter: brightness(0.5) saturate(0.4) hue-rotate(200deg) contrast(1.05); }
-.leaflet-control-zoom { border: 1px solid var(–border2) !important; border-radius: 0 !important; }
-.leaflet-control-zoom a { background: #04101e !important; color: var(–accent) !important; border-color: var(–border2) !important; border-radius: 0 !important; }
-.leaflet-popup-content-wrapper { background: rgba(10,25,45,0.98) !important; border: 1px solid var(–border2) !important; border-radius: 0 !important; color: var(–text) !important; box-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,180,255,0.08) !important; }
-.leaflet-popup-tip { background: #040c18 !important; }
-.leaflet-popup-content { font-family: ‘Barlow Condensed’, sans-serif !important; font-size: 12px !important; margin: 10px 14px !important; line-height: 1.5 !important; }
-.popup-type { font-family:‘Orbitron’,sans-serif; font-size:11px; font-weight:700; color:var(–text2); margin-bottom:4px; letter-spacing:1px; }
-.popup-addr { color:var(–muted); font-size:10px; font-family:‘Share Tech Mono’,monospace; }
-.popup-time { color:var(–accent); font-size:9px; font-family:‘Share Tech Mono’,monospace; margin-top:5px; letter-spacing:1px; }
+  .map-legend { display: flex; gap: 12px; align-items: center; }
 
-/* ===== FILTER TABS ===== */
-.filter-bar {
-display: flex; background: var(–surface); border-bottom: 1px solid var(–border2);
-overflow-x: auto; scrollbar-width: none; position: relative; z-index: 1;
-}
-.filter-bar::-webkit-scrollbar { display: none; }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    letter-spacing: 1px; color: var(--muted);
+  }
 
-.tab {
-flex: 1; min-width: 60px; padding: 9px 4px;
-background: transparent; border: none; border-bottom: 2px solid transparent;
-color: var(–muted); font-family: ‘Share Tech Mono’, monospace;
-font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
-cursor: pointer; transition: all 0.2s; white-space: nowrap;
-}
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
-.tab.active {
-color: var(–accent); border-bottom-color: var(–accent);
-background: rgba(0,212,255,0.04);
-text-shadow: 0 0 8px rgba(0,212,255,0.4);
-}
+  #map { height: 260px; width: 100%; background: #020810; z-index: 1; }
 
-/* ===== STATUS BAR ===== */
-#status-bar {
-font-family: ‘Share Tech Mono’, monospace; font-size: 8px;
-letter-spacing: 2px; padding: 5px 14px; text-align: center;
-display: none; position: relative; z-index: 1;
-}
-#status-bar.warn  { display:block; background:rgba(255,170,0,0.06); border-bottom:1px solid rgba(255,170,0,0.2); color:var(–amber); }
-#status-bar.error { display:block; background:rgba(255,32,32,0.06); border-bottom:1px solid rgba(255,32,32,0.2); color:var(–red); }
-#status-bar.good  { display:block; background:rgba(0,255,136,0.04); border-bottom:1px solid rgba(0,255,136,0.15); color:var(–green); }
+  .leaflet-tile-pane { filter: brightness(0.5) saturate(0.4) hue-rotate(200deg) contrast(1.05); }
+  .leaflet-control-zoom { border: 1px solid var(--border2) !important; border-radius: 0 !important; }
+  .leaflet-control-zoom a { background: #0a1828 !important; color: var(--accent) !important; border-color: var(--border2) !important; border-radius: 0 !important; }
+  .leaflet-popup-content-wrapper { background: rgba(10,25,45,0.98) !important; border: 1px solid var(--border2) !important; border-radius: 0 !important; color: var(--text) !important; box-shadow: 0 4px 30px rgba(0,0,0,0.6) !important; }
+  .leaflet-popup-tip { background: #0a1828 !important; }
+  .leaflet-popup-content { font-family: 'Barlow Condensed', sans-serif !important; font-size: 12px !important; margin: 10px 14px !important; line-height: 1.5 !important; }
+  .popup-type { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; color:var(--text2); margin-bottom:4px; letter-spacing:1px; }
+  .popup-addr { color:var(--muted); font-size:10px; font-family:'Share Tech Mono',monospace; }
+  .popup-time { color:var(--accent); font-size:9px; font-family:'Share Tech Mono',monospace; margin-top:5px; letter-spacing:1px; }
 
-/* ===== INCIDENT LIST ===== */
-#incident-list { padding-bottom: 40px; position: relative; z-index: 1; }
+  /* ===== TYPE FILTER TABS ===== */
+  .filter-bar {
+    display: flex; background: var(--surface); border-bottom: 1px solid var(--border2);
+    overflow-x: auto; scrollbar-width: none; position: relative; z-index: 1;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
 
-.state-screen {
-display: flex; flex-direction: column; align-items: center;
-justify-content: center; min-height: 200px; gap: 14px;
-color: var(–muted); font-family: ‘Share Tech Mono’, monospace;
-font-size: 10px; letter-spacing: 3px;
-}
+  .tab {
+    flex: 1; min-width: 60px; padding: 9px 4px;
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
 
-.spinner {
-width: 28px; height: 28px; border: 1px solid var(–border2);
-border-top-color: var(–accent); border-radius: 50%;
-animation: spin 0.7s linear infinite;
-box-shadow: 0 0 12px rgba(0,212,255,0.2);
-}
+  .tab.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+    background: rgba(0,212,255,0.04);
+    text-shadow: 0 0 8px rgba(0,212,255,0.4);
+  }
 
-.inc-card {
-display: flex; gap: 12px; align-items: flex-start;
-padding: 12px 14px; border-bottom: 1px solid rgba(13,32,53,0.8);
-border-left: 2px solid transparent; transition: all 0.15s;
-animation: fadein 0.3s ease; cursor: pointer; position: relative;
-}
+  /* ===== STATUS BAR ===== */
+  #status-bar {
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    letter-spacing: 2px; padding: 5px 14px; text-align: center;
+    display: none; position: relative; z-index: 1;
+  }
+  #status-bar.warn  { display:block; background:rgba(255,170,0,0.06); border-bottom:1px solid rgba(255,170,0,0.2); color:var(--amber); }
+  #status-bar.error { display:block; background:rgba(255,58,58,0.06); border-bottom:1px solid rgba(255,58,58,0.2); color:var(--red); }
+  #status-bar.good  { display:block; background:rgba(0,255,136,0.04); border-bottom:1px solid rgba(0,255,136,0.15); color:var(--green); }
 
-@keyframes fadein { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
+  /* ===== INCIDENT LIST ===== */
+  #incident-list { padding-bottom: 40px; position: relative; z-index: 1; }
 
-.inc-card:active { background: rgba(0,212,255,0.03); }
-.inc-card.is-today { border-left-color: var(–red); background: rgba(255,58,58,0.04); }
-.inc-card.is-older { opacity: 0.7; }
-.inc-card.highlighted { background: rgba(0,212,255,0.05) !important; border-left-color: var(–accent) !important; opacity: 1 !important; }
+  .state-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 200px; gap: 14px;
+    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 3px;
+  }
 
-.inc-icon {
-width: 38px; height: 38px;
-display: flex; align-items: center; justify-content: center;
-font-size: 17px; flex-shrink: 0; border: 1px solid; position: relative;
-}
+  .spinner {
+    width: 28px; height: 28px; border: 1px solid var(--border2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
 
-.inc-icon::before, .inc-icon::after {
-content: ‘’; position: absolute;
-width: 6px; height: 6px; border-color: inherit; border-style: solid; opacity: 0.4;
-}
-.inc-icon::before { top:-1px; left:-1px; border-width:1px 0 0 1px; }
-.inc-icon::after  { bottom:-1px; right:-1px; border-width:0 1px 1px 0; }
+  .inc-card {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 14px; border-bottom: 1px solid rgba(26,53,80,0.6);
+    border-left: 2px solid transparent; transition: all 0.15s;
+    animation: fadein 0.3s ease; cursor: pointer; position: relative;
+  }
 
-.icon-fire    { background:rgba(255,100,0,0.08);  border-color:rgba(255,100,0,0.4); }
-.icon-medical { background:rgba(255,32,32,0.08);  border-color:rgba(255,32,32,0.35); }
-.icon-traffic { background:rgba(0,180,255,0.06);  border-color:rgba(0,180,255,0.3); }
-.icon-alarm   { background:rgba(255,170,0,0.06);  border-color:rgba(255,170,0,0.3); }
-.icon-other   { background:rgba(60,100,140,0.06); border-color:rgba(60,100,140,0.3); }
+  @keyframes fadein { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
 
-.inc-body { flex: 1; min-width: 0; }
+  .inc-card:active { background: rgba(0,212,255,0.03); }
+  .inc-card.is-today { border-left-color: var(--red); background: rgba(255,58,58,0.04); }
+  .inc-card.is-older { opacity: 0.7; }
+  .inc-card.highlighted { background: rgba(0,212,255,0.05) !important; border-left-color: var(--accent) !important; opacity: 1 !important; }
 
-.inc-type {
-font-family: ‘Orbitron’, sans-serif; font-size: 11px; font-weight: 600;
-color: var(–text2); white-space: nowrap; overflow: hidden;
-text-overflow: ellipsis; letter-spacing: 0.5px;
-}
+  /* Agency color left border overrides */
+  .inc-card.agency-npfd.is-today { border-left-color: #ff6060; }
+  .inc-card.agency-vfd.is-today  { border-left-color: #60c0ff; }
+  .inc-card.agency-efd.is-today  { border-left-color: var(--amber); }
+  .inc-card.agency-nvfd.is-today { border-left-color: #80ff80; }
 
-.inc-addr {
-font-family: ‘Share Tech Mono’, monospace; font-size: 9px;
-color: var(–muted); margin-top: 4px; white-space: nowrap;
-overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px;
-}
+  .inc-icon {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0; border: 1px solid; position: relative;
+  }
 
-.inc-addr.no-addr { color: var(–dim); font-style: italic; }
+  .inc-icon::before, .inc-icon::after {
+    content: ''; position: absolute;
+    width: 6px; height: 6px; border-color: inherit; border-style: solid; opacity: 0.4;
+  }
+  .inc-icon::before { top:-1px; left:-1px; border-width:1px 0 0 1px; }
+  .inc-icon::after  { bottom:-1px; right:-1px; border-width:0 1px 1px 0; }
 
-.inc-case {
-font-family: ‘Share Tech Mono’, monospace; font-size: 7px;
-color: var(–dim); margin-top: 4px; letter-spacing: 1px;
-}
+  .icon-fire    { background:rgba(255,100,0,0.08);  border-color:rgba(255,100,0,0.4); }
+  .icon-medical { background:rgba(255,58,58,0.08);  border-color:rgba(255,58,58,0.35); }
+  .icon-traffic { background:rgba(0,180,255,0.06);  border-color:rgba(0,180,255,0.3); }
+  .icon-alarm   { background:rgba(255,187,0,0.06);  border-color:rgba(255,187,0,0.3); }
+  .icon-other   { background:rgba(60,100,140,0.06); border-color:rgba(60,100,140,0.3); }
 
-.inc-meta { text-align: right; flex-shrink: 0; }
+  .inc-body { flex: 1; min-width: 0; }
 
-.inc-time {
-font-family: ‘Orbitron’, sans-serif; font-size: 11px; font-weight: 600;
-color: var(–accent); letter-spacing: 1px;
-text-shadow: 0 0 8px rgba(0,212,255,0.4);
-}
+  .inc-type {
+    font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--text2); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; letter-spacing: 0.5px;
+  }
 
-.inc-date {
-font-family: ‘Share Tech Mono’, monospace; font-size: 7px;
-color: var(–muted); margin-top: 2px; letter-spacing: 1px;
-}
+  .inc-addr {
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    color: var(--muted); margin-top: 4px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
 
-.status-badge {
-display: inline-block; font-family: ‘Share Tech Mono’, monospace;
-font-size: 6px; letter-spacing: 1.5px; padding: 2px 5px;
-margin-top: 4px; text-transform: uppercase;
-}
-.badge-today { background:rgba(255,32,32,0.12); color:var(–red); border:1px solid rgba(255,32,32,0.3); text-shadow:0 0 6px rgba(255,32,32,0.5); }
-.badge-older { background:rgba(30,50,80,0.3); color:var(–muted); border:1px solid var(–border); }
+  .inc-addr.no-addr { color: var(--dim); font-style: italic; }
 
-#last-updated {
-text-align: center; font-family: ‘Share Tech Mono’, monospace;
-font-size: 7px; color: var(–muted); letter-spacing: 2px; padding: 12px;
-position: relative; z-index: 1;
-}
+  .inc-case {
+    font-family: 'Share Tech Mono', monospace; font-size: 7px;
+    color: var(--dim); margin-top: 4px; letter-spacing: 1px;
+  }
 
-.source-note {
-text-align: center; font-family: ‘Share Tech Mono’, monospace;
-font-size: 7px; color: rgba(42,74,102,0.5); letter-spacing: 1px;
-padding: 0 14px 20px; position: relative; z-index: 1;
-}
-.source-note a { color: rgba(0,180,255,0.4); text-decoration: none; }
+  /* Agency tag */
+  .agency-tag {
+    display: inline-block; font-family: 'Share Tech Mono', monospace;
+    font-size: 7px; letter-spacing: 1px; padding: 1px 5px;
+    border: 1px solid var(--border); color: var(--muted);
+    margin-right: 4px; vertical-align: middle;
+  }
+  .agency-tag.npfd { border-color:rgba(255,96,96,0.4); color:#ff6060; }
+  .agency-tag.scfd { border-color:rgba(0,212,255,0.3); color:var(--accent2); }
+  .agency-tag.vfd  { border-color:rgba(96,192,255,0.3); color:#60c0ff; }
+  .agency-tag.efd  { border-color:rgba(255,187,0,0.3); color:var(--amber); }
+  .agency-tag.nvfd { border-color:rgba(128,255,128,0.3); color:#80ff80; }
+  .agency-tag.other { border-color:rgba(192,128,255,0.3); color:#c080ff; }
+
+  .inc-meta { text-align: right; flex-shrink: 0; }
+
+  .inc-time {
+    font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--accent); letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(0,212,255,0.4);
+  }
+
+  .inc-date {
+    font-family: 'Share Tech Mono', monospace; font-size: 7px;
+    color: var(--muted); margin-top: 2px; letter-spacing: 1px;
+  }
+
+  .status-badge {
+    display: inline-block; font-family: 'Share Tech Mono', monospace;
+    font-size: 6px; letter-spacing: 1.5px; padding: 2px 5px;
+    margin-top: 4px; text-transform: uppercase;
+  }
+  .badge-today { background:rgba(255,58,58,0.12); color:var(--red); border:1px solid rgba(255,58,58,0.3); text-shadow:0 0 6px rgba(255,58,58,0.5); }
+  .badge-older { background:rgba(30,50,80,0.3); color:var(--muted); border:1px solid var(--border); }
+
+  #last-updated {
+    text-align: center; font-family: 'Share Tech Mono', monospace;
+    font-size: 7px; color: var(--muted); letter-spacing: 2px; padding: 12px;
+    position: relative; z-index: 1;
+  }
+
+  .source-note {
+    text-align: center; font-family: 'Share Tech Mono', monospace;
+    font-size: 7px; color: rgba(42,74,102,0.5); letter-spacing: 1px;
+    padding: 0 14px 20px; position: relative; z-index: 1;
+  }
+  .source-note a { color: rgba(0,180,255,0.4); text-decoration: none; }
 </style>
-
 </head>
 <body>
 <div class="vignette"></div>
@@ -359,8 +397,8 @@ padding: 0 14px 20px; position: relative; z-index: 1;
     <div class="brand">
       <div class="brand-shield">&#x1F6A8;</div>
       <div>
-        <div class="brand-text">NORTH PORT CAD</div>
-        <div class="brand-sub">NPFD // SARASOTA CO. 911 DISPATCH</div>
+        <div class="brand-text">SARASOTA CO. CAD</div>
+        <div class="brand-sub">911 DISPATCH // LIVE FEED</div>
       </div>
     </div>
   </div>
@@ -375,20 +413,32 @@ padding: 0 14px 20px; position: relative; z-index: 1;
   <div class="stat"><div class="stat-num red"   id="s-today">--</div><div class="stat-label">Today</div></div>
   <div class="stat"><div class="stat-num amber"  id="s-fire">--</div><div class="stat-label">Fire</div></div>
   <div class="stat"><div class="stat-num"        id="s-traffic">--</div><div class="stat-label">Traffic</div></div>
-  <div class="stat"><div class="stat-num green"  id="s-alarm">--</div><div class="stat-label">Alarms</div></div>
+  <div class="stat"><div class="stat-num green"  id="s-total">--</div><div class="stat-label">Total</div></div>
+</div>
+
+<!-- Agency filters -->
+<div class="agency-bar" id="agency-bar">
+  <button class="agency-btn active" onclick="setAgency('all',this)">All</button>
+  <button class="agency-btn npfd"  onclick="setAgency('npfd',this)">N. Port</button>
+  <button class="agency-btn scfd"  onclick="setAgency('scfd',this)">SCFD</button>
+  <button class="agency-btn vfd"   onclick="setAgency('vfd',this)">Venice</button>
+  <button class="agency-btn efd"   onclick="setAgency('efd',this)">Englewood</button>
+  <button class="agency-btn nvfd"  onclick="setAgency('nvfd',this)">Nokomis</button>
+  <button class="agency-btn other" onclick="setAgency('other',this)">Other</button>
 </div>
 
 <div class="map-section">
   <div class="map-header">
-    <div class="map-title">North Port, FL</div>
+    <div class="map-title">Sarasota County, FL</div>
     <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#ff2020;box-shadow:0 0 4px #ff2020"></div>TODAY</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff3a3a;box-shadow:0 0 4px #ff3a3a"></div>TODAY</div>
       <div class="legend-item"><div class="legend-dot" style="background:#2a4a66"></div>PRIOR</div>
     </div>
   </div>
   <div id="map"></div>
 </div>
 
+<!-- Type filters -->
 <div class="filter-bar">
   <button class="tab active" onclick="setFilter('all',this)">All</button>
   <button class="tab" onclick="setFilter('today',this)">Today</button>
@@ -403,7 +453,7 @@ padding: 0 14px 20px; position: relative; z-index: 1;
   <div class="state-screen"><div class="spinner"></div><span>ACQUIRING FEED...</span></div>
 </div>
 <div id="last-updated"></div>
-<div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a> // NPFD FILTER ACTIVE</div>
+<div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a></div>
 
 <script>
   var WORKER_URL = "https://pulsepoint-proxy.yanks126.workers.dev";
@@ -414,8 +464,9 @@ padding: 0 14px 20px; position: relative; z-index: 1;
   }
   setInterval(tick, 1000); tick();
 
-  var NP_LAT = 27.0447, NP_LNG = -82.1426;
-  var map = L.map("map", {center:[NP_LAT,NP_LNG], zoom:12, zoomControl:true, attributionControl:false});
+  // Map centered on Sarasota County
+  var SC_LAT = 27.15, SC_LNG = -82.32;
+  var map = L.map("map", {center:[SC_LAT, SC_LNG], zoom:10, zoomControl:true, attributionControl:false});
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:18}).addTo(map);
 
   function makeIcon(bg, glow, emoji) {
@@ -430,18 +481,39 @@ padding: 0 14px 20px; position: relative; z-index: 1;
     fire_today:    makeIcon("rgba(255,80,0,0.9)",   "rgba(255,100,0,0.8)",  "&#x1F525;"),
     traffic_today: makeIcon("rgba(0,160,255,0.9)",  "rgba(0,200,255,0.8)",  "&#x1F697;"),
     alarm_today:   makeIcon("rgba(255,180,0,0.9)",  "rgba(255,200,0,0.8)",  "&#x26A0;"),
+    medical_today: makeIcon("rgba(255,60,60,0.9)",  "rgba(255,80,80,0.8)",  "&#x1FA7A;"),
     other_today:   makeIcon("rgba(60,120,180,0.9)", "rgba(80,150,220,0.8)", "&#x26A1;"),
     fire_older:    makeIcon("rgba(80,40,0,0.6)",    "rgba(120,60,0,0.4)",   "&#x1F525;"),
     traffic_older: makeIcon("rgba(0,60,100,0.6)",   "rgba(0,100,150,0.4)",  "&#x1F697;"),
     alarm_older:   makeIcon("rgba(80,60,0,0.6)",    "rgba(120,100,0,0.4)",  "&#x26A0;"),
+    medical_older: makeIcon("rgba(100,30,30,0.6)",  "rgba(150,50,50,0.4)",  "&#x1FA7A;"),
     other_older:   makeIcon("rgba(20,40,60,0.6)",   "rgba(40,70,100,0.4)",  "&#x26A1;"),
   };
 
   var mapMarkers = [];
   var allIncidents = [];
   var currentFilter = "all";
+  var currentAgency = "all";
   var geocodeCache = {};
   var idCounter = 0;
+
+  // Determine agency from case number prefix
+  function getAgency(caseNum) {
+    if (!caseNum) return "other";
+    var c = caseNum.toUpperCase();
+    if (c.indexOf("NPFD") === 0) return "npfd";
+    if (c.indexOf("SCFD") === 0) return "scfd";
+    if (c.indexOf("VFD")  === 0) return "vfd";
+    if (c.indexOf("EFD")  === 0) return "efd";
+    if (c.indexOf("NVFD") === 0) return "nvfd";
+    if (c.indexOf("LBFD") === 0) return "lbfd";
+    return "other";
+  }
+
+  function getAgencyLabel(agency) {
+    var labels = {npfd:"N.PORT", scfd:"SCFD", vfd:"VENICE", efd:"ENGLEWOOD", nvfd:"NOKOMIS", lbfd:"LBKEY", other:"OTHER"};
+    return labels[agency] || "OTHER";
+  }
 
   function category(t) {
     if (!t) return "other";
@@ -503,8 +575,9 @@ padding: 0 14px 20px; position: relative; z-index: 1;
       var zone     = cells[5].textContent.trim();
       var caseNum  = cells[6].textContent.trim();
 
-      if (!caseNum || caseNum.indexOf("NPFD") === -1) return;
-      if (!event) return;
+      if (!event || !caseNum) return;
+
+      var agency = getAgency(caseNum);
 
       incidents.push({
         date:      currentDate,
@@ -514,6 +587,7 @@ padding: 0 14px 20px; position: relative; z-index: 1;
         grid:      grid,
         zone:      zone,
         caseNum:   caseNum,
+        agency:    agency,
         isToday:   currentDate === todayStr,
         mappable:  hasAddress(location),
         _id:       "inc" + (++idCounter)
@@ -528,7 +602,7 @@ padding: 0 14px 20px; position: relative; z-index: 1;
     try {
       var q = encodeURIComponent(address + ", Sarasota County, FL, USA");
       var r = await fetch("https://nominatim.openstreetmap.org/search?q=" + q + "&format=json&limit=1", {
-        headers: {"Accept-Language":"en", "User-Agent":"NorthPortCAD/1.0"}
+        headers: {"Accept-Language":"en", "User-Agent":"SarasotaCAD/1.0"}
       });
       var data = await r.json();
       if (data && data[0]) {
@@ -537,7 +611,7 @@ padding: 0 14px 20px; position: relative; z-index: 1;
         return result;
       }
     } catch(e) {}
-    var result = {lat: NP_LAT + (Math.random()-0.5)*0.06, lng: NP_LNG + (Math.random()-0.5)*0.08};
+    var result = {lat: SC_LAT + (Math.random()-0.5)*0.15, lng: SC_LNG + (Math.random()-0.5)*0.2};
     geocodeCache[address] = result;
     return result;
   }
@@ -584,29 +658,49 @@ padding: 0 14px 20px; position: relative; z-index: 1;
 
     if (bounds.length) {
       try { map.fitBounds(bounds, {padding:[28,28], maxZoom:14}); }
-      catch(e) { map.setView([NP_LAT, NP_LNG], 12); }
+      catch(e) { map.setView([SC_LAT, SC_LNG], 10); }
     }
+  }
+
+  function getFiltered() {
+    var out = allIncidents;
+    // Agency filter
+    if (currentAgency !== "all") {
+      if (currentAgency === "other") {
+        out = out.filter(function(i) { return i.agency === "other" || i.agency === "lbfd"; });
+      } else {
+        out = out.filter(function(i) { return i.agency === currentAgency; });
+      }
+    }
+    // Type filter
+    if (currentFilter === "today")   out = out.filter(function(i) { return i.isToday; });
+    if (currentFilter === "fire")    out = out.filter(function(i) { return category(i.eventType) === "fire"; });
+    if (currentFilter === "medical") out = out.filter(function(i) { return category(i.eventType) === "medical"; });
+    if (currentFilter === "traffic") out = out.filter(function(i) { return category(i.eventType) === "traffic"; });
+    if (currentFilter === "alarm")   out = out.filter(function(i) { return category(i.eventType) === "alarm"; });
+    return out;
   }
 
   function renderList(incidents) {
     var el = document.getElementById("incident-list");
     if (!incidents.length) {
-      el.innerHTML = "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x1F4E1;</span><span>NO NPFD INCIDENTS IN FEED</span></div>";
+      el.innerHTML = "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x1F4E1;</span><span>NO INCIDENTS IN FEED</span></div>";
       renderMap([]);
       return;
     }
 
     el.innerHTML = incidents.map(function(inc) {
       var cat = category(inc.eventType);
+      var ag = inc.agency || "other";
       var addrHtml = inc.mappable
         ? "<div class=\"inc-addr\">&#x25B8; " + inc.location + "</div>"
         : "<div class=\"inc-addr no-addr\">Address not disclosed</div>";
-      return "<div class=\"inc-card " + (inc.isToday ? "is-today" : "is-older") + "\" id=\"card-" + inc._id + "\" onclick=\"focusOnMap('" + inc._id + "')\">" +
+      return "<div class=\"inc-card " + (inc.isToday ? "is-today" : "is-older") + " agency-" + ag + "\" id=\"card-" + inc._id + "\" onclick=\"focusOnMap('" + inc._id + "')\">" +
         "<div class=\"inc-icon " + CAT_CLS[cat] + "\">" + CAT_EMOJI[cat] + "</div>" +
         "<div class=\"inc-body\">" +
           "<div class=\"inc-type\">" + inc.eventType + "</div>" +
           addrHtml +
-          "<div class=\"inc-case\">" + inc.caseNum + (inc.zone ? " // " + inc.zone : "") + "</div>" +
+          "<div class=\"inc-case\"><span class=\"agency-tag " + ag + "\">" + getAgencyLabel(ag) + "</span>" + inc.caseNum + "</div>" +
         "</div>" +
         "<div class=\"inc-meta\">" +
           "<div class=\"inc-time\">" + inc.time + "</div>" +
@@ -639,29 +733,29 @@ padding: 0 14px 20px; position: relative; z-index: 1;
     var today   = list.filter(function(i) { return i.isToday; }).length;
     var fire    = list.filter(function(i) { return category(i.eventType) === "fire"; }).length;
     var traffic = list.filter(function(i) { return category(i.eventType) === "traffic"; }).length;
-    var alarm   = list.filter(function(i) { return category(i.eventType) === "alarm"; }).length;
     document.getElementById("s-today").textContent   = today;
     document.getElementById("s-fire").textContent    = fire;
     document.getElementById("s-traffic").textContent = traffic;
-    document.getElementById("s-alarm").textContent   = alarm;
+    document.getElementById("s-total").textContent   = list.length;
   }
 
-  function applyFilter() {
-    var f = currentFilter;
-    var out = allIncidents;
-    if (f === "today")   out = allIncidents.filter(function(i) { return i.isToday; });
-    if (f === "fire")    out = allIncidents.filter(function(i) { return category(i.eventType) === "fire"; });
-    if (f === "medical") out = allIncidents.filter(function(i) { return category(i.eventType) === "medical"; });
-    if (f === "traffic") out = allIncidents.filter(function(i) { return category(i.eventType) === "traffic"; });
-    if (f === "alarm")   out = allIncidents.filter(function(i) { return category(i.eventType) === "alarm"; });
-    renderList(out);
+  function applyFilters() {
+    var filtered = getFiltered();
+    renderList(filtered);
+  }
+
+  function setAgency(a, btn) {
+    currentAgency = a;
+    document.querySelectorAll(".agency-btn").forEach(function(b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    applyFilters();
   }
 
   function setFilter(f, btn) {
     currentFilter = f;
     document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
     btn.classList.add("active");
-    applyFilter();
+    applyFilters();
   }
 
   async function loadIncidents() {
@@ -678,15 +772,15 @@ padding: 0 14px 20px; position: relative; z-index: 1;
       var incidents = parseDispatchHTML(html);
 
       if (!incidents.length) {
-        setStatus("No NPFD incidents in current feed", "warn");
+        setStatus("No incidents in current feed", "warn");
         allIncidents = [];
         updateStats([]);
         renderList([]);
       } else {
         allIncidents = incidents;
         updateStats(allIncidents);
-        applyFilter();
-        setStatus("Live feed active -- Sarasota County 911 Dispatch -- NPFD only", "good");
+        applyFilters();
+        setStatus("Live -- Sarasota County 911 Dispatch", "good");
         setTimeout(function() { setStatus("", ""); }, 5000);
       }
 
@@ -706,6 +800,5 @@ padding: 0 14px 20px; position: relative; z-index: 1;
   loadIncidents();
   setInterval(loadIncidents, 60000);
 </script>
-
 </body>
 </html>
