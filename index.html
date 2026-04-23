@@ -533,7 +533,7 @@
   setInterval(tick, 1000); tick();
 
   // Map centered on Sarasota County
-  var SC_LAT = 27.15, SC_LNG = -82.32;
+  var SC_LAT = 27.10, SC_LNG = -82.25;
   var map = L.map("map", {center:[SC_LAT, SC_LNG], zoom:10, zoomControl:true, attributionControl:false});
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:18}).addTo(map);
 
@@ -692,23 +692,67 @@
     return merged;
   }
 
+  // Bounding box covering Sarasota + Charlotte, Manatee, DeSoto, Hardee counties
+  var SC_BOUNDS = {
+    minLat: 26.50, maxLat: 27.90,
+    minLng: -82.90, maxLng: -81.60
+  };
+
+  function inSarasota(lat, lng) {
+    return lat >= SC_BOUNDS.minLat && lat <= SC_BOUNDS.maxLat &&
+           lng >= SC_BOUNDS.minLng && lng <= SC_BOUNDS.maxLng;
+  }
+
+  function formatAddress(address) {
+    if (!address) return "";
+    var a = address.trim();
+    // Handle intersections: "AMHERST AVE / FRUITVILLE RD" -> "AMHERST AVE AND FRUITVILLE RD"
+    a = a.replace(/\s*\/\s*/g, " AND ");
+    // Add Sarasota County context
+    return a + ", Sarasota County, FL";
+  }
+
+  async function geocodeQuery(query) {
+    // Viewbox locked to Sarasota County, bounded=1 means only return results inside it
+    var viewbox = "-82.90,26.50,-81.60,27.90";
+    var url = "https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(query) +
+              "&format=json&limit=3&bounded=1&viewbox=" + viewbox +
+              "&countrycodes=us";
+    var r = await fetch(url, {
+      headers: {"Accept-Language":"en", "User-Agent":"SarasotaCountyCAD/1.0"}
+    });
+    var data = await r.json();
+    // Return first result that falls inside Sarasota County bounds
+    for (var i = 0; i < data.length; i++) {
+      var lat = parseFloat(data[i].lat);
+      var lng = parseFloat(data[i].lon);
+      if (inSarasota(lat, lng)) return {lat: lat, lng: lng};
+    }
+    return null;
+  }
+
   async function geocode(address) {
     if (geocodeCache[address]) return geocodeCache[address];
+    var result = null;
     try {
-      var q = encodeURIComponent(address + ", Sarasota County, FL, USA");
-      var r = await fetch("https://nominatim.openstreetmap.org/search?q=" + q + "&format=json&limit=1", {
-        headers: {"Accept-Language":"en", "User-Agent":"SarasotaCAD/1.0"}
-      });
-      var data = await r.json();
-      if (data && data[0]) {
-        var result = {lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)};
-        geocodeCache[address] = result;
-        return result;
+      // Try 1: full formatted address
+      result = await geocodeQuery(formatAddress(address));
+
+      // Try 2: if intersection, try just the first street name
+      if (!result && address.indexOf("/") !== -1) {
+        var firstStreet = address.split("/")[0].trim();
+        result = await geocodeQuery(firstStreet + ", Sarasota County, FL");
       }
     } catch(e) {}
-    var result = {lat: SC_LAT + (Math.random()-0.5)*0.15, lng: SC_LNG + (Math.random()-0.5)*0.2};
-    geocodeCache[address] = result;
-    return result;
+
+    if (result) {
+      geocodeCache[address] = result;
+      return result;
+    }
+
+    // No valid result — return null so marker is skipped rather than plotted wrong
+    geocodeCache[address] = null;
+    return null;
   }
 
   async function renderMap(incidents) {
@@ -723,6 +767,7 @@
       var inc = mappable[i];
       if (!inc._lat) {
         var c = await geocode(inc.location);
+        if (!c) continue; // skip — couldn't find a valid location
         inc._lat = c.lat;
         inc._lng = c.lng;
       }
