@@ -744,6 +744,8 @@
     return merged;
   }
 
+  var GOOGLE_KEY = "AIzaSyBowH_UlTDT0L9cCLoEi34tlChTFA6i2q4";
+
   var SC_BOUNDS = {
     minLat: 26.50, maxLat: 27.90,
     minLng: -82.90, maxLng: -81.60
@@ -754,7 +756,6 @@
            lng >= SC_BOUNDS.minLng && lng <= SC_BOUNDS.maxLng;
   }
 
-  // Extract city hint from zone string e.g. "VENICE FIRE STA 52" -> "Venice"
   function cityFromZone(zone) {
     if (!zone) return "";
     var z = zone.toUpperCase();
@@ -772,18 +773,17 @@
     if (geocodeCache[cacheKey] !== undefined) return geocodeCache[cacheKey];
     var city = cityHint || "Sarasota";
     try {
-      var q = address.trim().replace(/\s*\/\s*/g, " and ") + " " + city + " Florida";
-      var url = "https://photon.komoot.io/api/?q=" + encodeURIComponent(q) +
-                "&limit=5&lang=en&bbox=-82.90,26.50,-81.60,27.90";
+      var q = address.trim() + ", " + city + ", FL";
+      var url = "https://maps.googleapis.com/maps/api/geocode/json?address=" +
+                encodeURIComponent(q) +
+                "&bounds=26.50,-82.90|27.90,-81.60" +
+                "&key=" + GOOGLE_KEY;
       var r = await fetch(url);
       var data = await r.json();
-      var features = data.features || [];
-      for (var i = 0; i < features.length; i++) {
-        var c = features[i].geometry && features[i].geometry.coordinates;
-        if (!c) continue;
-        var lng = c[0], lat = c[1];
-        if (inRegion(lat, lng)) {
-          var result = {lat: lat, lng: lng};
+      if (data.status === "OK" && data.results && data.results.length > 0) {
+        var loc = data.results[0].geometry.location;
+        if (inRegion(loc.lat, loc.lng)) {
+          var result = {lat: loc.lat, lng: loc.lng};
           geocodeCache[cacheKey] = result;
           return result;
         }
@@ -881,9 +881,9 @@
     el.innerHTML = incidents.map(function(inc) {
       var cat = category(inc.eventType);
       var ag = inc.agency || "other";
-      var addrHtml = inc.mappable
+      var addrHtml = inc.location
         ? "<div class=\"inc-addr\">&#x25B8; " + inc.location + "</div>"
-        : "<div class=\"inc-addr no-addr\">Address not disclosed</div>";
+        : "";
 
       // Build all agency tags
       var agencyTags = (inc.agencies || [ag]).map(function(a) {
