@@ -586,10 +586,11 @@
   function category(t) {
     if (!t) return "other";
     t = t.toUpperCase();
-    if (/MEDICAL|EMS|CARDIAC|CPR|TRAUMA|RESCUE MEDICAL|FALL|SICK|INJURY|ALS|BLS|OVERDOSE|SEIZ|DIABET|ALLERGIC|UNCONSCIOUS|HEMORRHAGE|STROKE|CHEST/.test(t)) return "medical";
-    if (/FIRE|BRUSH|EXPLOSION|STRUCTURE|SMOKE|HAZMAT|BURNING|OUTSIDE FIRE|ELECTRICAL/.test(t)) return "fire";
+    // Traffic must be checked FIRST so crash/collision incidents are not caught by injury patterns
     if (/TRAFFIC|CRASH|COLLISION|ACCIDENT|MVC/.test(t)) return "traffic";
     if (/ALARM|CARBON|MONOXIDE/.test(t)) return "alarm";
+    if (/FIRE|BRUSH|EXPLOSION|STRUCTURE|SMOKE|HAZMAT|BURNING|OUTSIDE FIRE|ELECTRICAL/.test(t)) return "fire";
+    if (/MEDICAL|EMS|CARDIAC|CPR|TRAUMA|RESCUE MEDICAL|FALL|SICK|ALS|BLS|OVERDOSE|SEIZ|DIABET|ALLERGIC|UNCONSCIOUS|HEMORRHAGE|STROKE|CHEST PAIN|INJURY/.test(t)) return "medical";
     return "other";
   }
 
