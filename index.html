@@ -732,16 +732,17 @@
   }
 
   async function geocodeQuery(query) {
-    // Viewbox locked to Sarasota County, bounded=1 means only return results inside it
-    var viewbox = "-82.90,26.50,-81.60,27.90";
+    // viewbox is a soft bias — does NOT exclude results outside it (bounded=0)
+    // We validate with inSarasota() ourselves after
+    var viewbox = "-82.90,27.90,-81.60,26.50";
     var url = "https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(query) +
-              "&format=json&limit=3&bounded=1&viewbox=" + viewbox +
+              "&format=json&limit=5&viewbox=" + viewbox +
               "&countrycodes=us";
     var r = await fetch(url, {
       headers: {"Accept-Language":"en", "User-Agent":"SarasotaCountyCAD/1.0"}
     });
     var data = await r.json();
-    // Return first result that falls inside Sarasota County bounds
+    // Prefer results inside the region, but if none found accept the closest result
     for (var i = 0; i < data.length; i++) {
       var lat = parseFloat(data[i].lat);
       var lng = parseFloat(data[i].lon);
@@ -891,14 +892,29 @@
       if (allIncidents[i]._id === id) { inc = allIncidents[i]; break; }
     }
     if (!inc) return;
-    if (inc.mappable && inc._lat) {
-      document.getElementById("map").scrollIntoView({behavior:"smooth", block:"start"});
-      map.setView([inc._lat, inc._lng], 15, {animate:true});
-      mapMarkers.forEach(function(m) { if (m._incId === id) m.openPopup(); });
-    }
+
+    // Highlight the card regardless
     document.querySelectorAll(".inc-card").forEach(function(c) { c.classList.remove("highlighted"); });
     var card = document.getElementById("card-" + id);
     if (card) card.classList.add("highlighted");
+
+    // Pan map if we have coordinates
+    if (inc.mappable && inc._lat) {
+      map.setView([inc._lat, inc._lng], 15, {animate:true});
+      mapMarkers.forEach(function(m) { if (m._incId === id) m.openPopup(); });
+      return;
+    }
+
+    // Coordinates not yet loaded — geocode on demand then pan
+    if (inc.mappable && !inc._lat) {
+      geocode(inc.location).then(function(c) {
+        if (!c) return;
+        inc._lat = c.lat;
+        inc._lng = c.lng;
+        map.setView([inc._lat, inc._lng], 15, {animate:true});
+        mapMarkers.forEach(function(m) { if (m._incId === id) m.openPopup(); });
+      });
+    }
   }
 
   function updateStats(list) {
