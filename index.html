@@ -561,16 +561,16 @@
   }
 
   var ICONS = {
-    fire_today:    makeIcon("rgba(255,80,0,0.9)",   "rgba(255,100,0,0.8)",  "&#x1F525;"),
-    traffic_today: makeIcon("rgba(0,160,255,0.9)",  "rgba(0,200,255,0.8)",  "&#x1F697;"),
-    alarm_today:   makeIcon("rgba(255,180,0,0.9)",  "rgba(255,200,0,0.8)",  "&#x26A0;"),
-    marine_today:  makeIcon("rgba(0,140,220,0.9)",  "rgba(0,180,255,0.8)",  "&#x26F5;"),
-    other_today:   makeIcon("rgba(60,120,180,0.9)", "rgba(80,150,220,0.8)", "&#x26A1;"),
-    fire_older:    makeIcon("rgba(80,40,0,0.6)",    "rgba(120,60,0,0.4)",   "&#x1F525;"),
-    traffic_older: makeIcon("rgba(0,60,100,0.6)",   "rgba(0,100,150,0.4)",  "&#x1F697;"),
-    alarm_older:   makeIcon("rgba(80,60,0,0.6)",    "rgba(120,100,0,0.4)",  "&#x26A0;"),
-    marine_older:  makeIcon("rgba(0,50,90,0.6)",    "rgba(0,80,140,0.4)",   "&#x26F5;"),
-    other_older:   makeIcon("rgba(20,40,60,0.6)",   "rgba(40,70,100,0.4)",  "&#x26A1;"),
+    fire_today:    makeIcon("rgba(255,80,0,0.9)",   "rgba(255,100,0,0.8)",  "\uD83D\uDD25"),
+    traffic_today: makeIcon("rgba(0,160,255,0.9)",  "rgba(0,200,255,0.8)",  "\uD83D\uDE97"),
+    alarm_today:   makeIcon("rgba(255,180,0,0.9)",  "rgba(255,200,0,0.8)",  "\u26A0"),
+    marine_today:  makeIcon("rgba(0,140,220,0.9)",  "rgba(0,180,255,0.8)",  "\u26F5"),
+    other_today:   makeIcon("rgba(60,120,180,0.9)", "rgba(80,150,220,0.8)", "\u26A1"),
+    fire_older:    makeIcon("rgba(80,40,0,0.6)",    "rgba(120,60,0,0.4)",   "\uD83D\uDD25"),
+    traffic_older: makeIcon("rgba(0,60,100,0.6)",   "rgba(0,100,150,0.4)",  "\uD83D\uDE97"),
+    alarm_older:   makeIcon("rgba(80,60,0,0.6)",    "rgba(120,100,0,0.4)",  "\u26A0"),
+    marine_older:  makeIcon("rgba(0,50,90,0.6)",    "rgba(0,80,140,0.4)",   "\u26F5"),
+    other_older:   makeIcon("rgba(20,40,60,0.6)",   "rgba(40,70,100,0.4)",  "\u26A1"),
   };
 
   var mapMarkers = [];
@@ -620,7 +620,7 @@
     return hasNumber || isIntersection;
   }
 
-  var CAT_EMOJI = {fire:"&#x1F525;", marine:"&#x26F5;", traffic:"&#x1F697;", alarm:"&#x26A0;", other:"&#x26A1;"};
+  var CAT_EMOJI = {fire:"\uD83D\uDD25", marine:"\u26F5", traffic:"\uD83D\uDE97", alarm:"\u26A0", other:"\u26A1"};
   var CAT_CLS   = {fire:"icon-fire", marine:"icon-marine", traffic:"icon-traffic", alarm:"icon-alarm", other:"icon-other"};
 
   function getTodayStr() {
