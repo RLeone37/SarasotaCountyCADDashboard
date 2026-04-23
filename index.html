@@ -756,48 +756,101 @@
            lng >= SC_BOUNDS.minLng && lng <= SC_BOUNDS.maxLng;
   }
 
+  // I-75 mile marker coordinate table for Sarasota/Charlotte/Manatee region
+  var I75_MM = {
+    191:{lat:26.9210,lng:-82.1100}, 192:{lat:26.9324,lng:-82.1089},
+    193:{lat:26.9437,lng:-82.1078}, 194:{lat:26.9551,lng:-82.1067},
+    195:{lat:26.9664,lng:-82.1056}, 196:{lat:26.9778,lng:-82.1045},
+    197:{lat:26.9891,lng:-82.1034}, 198:{lat:27.0005,lng:-82.1023},
+    199:{lat:27.0118,lng:-82.1012}, 200:{lat:27.0232,lng:-82.1001},
+    201:{lat:27.0345,lng:-82.0990}, 202:{lat:27.0459,lng:-82.0979},
+    203:{lat:27.0572,lng:-82.0968}, 204:{lat:27.0686,lng:-82.0957},
+    205:{lat:27.0799,lng:-82.0946}, 206:{lat:27.0913,lng:-82.0935},
+    207:{lat:27.1026,lng:-82.0924}, 208:{lat:27.1140,lng:-82.0913},
+    209:{lat:27.1253,lng:-82.0902}, 210:{lat:27.1367,lng:-82.0891},
+    211:{lat:27.1480,lng:-82.0880}, 212:{lat:27.1594,lng:-82.0869},
+    213:{lat:27.1707,lng:-82.0858}
+  };
+
+  function checkI75(address) {
+    var a = address.toUpperCase();
+    // CAD often encodes mile marker as a 6-digit fake house number: 210000 = MM 210
+    var m = a.match(/(\d{3})000\s*(?:N\s*|S\s*)?I[-\s]?75/);
+    if (m && I75_MM[parseInt(m[1])]) return I75_MM[parseInt(m[1])];
+    // Also handle plain MM references
+    var m2 = a.match(/I[-\s]?75[^0-9]*(\d{3})/);
+    if (!m2) m2 = a.match(/(\d{3})[^0-9]*I[-\s]?75/);
+    if (m2 && I75_MM[parseInt(m2[1])]) return I75_MM[parseInt(m2[1])];
+    return null;
+  }
+
+  function preprocessAddress(address) {
+    var a = address.trim().toUpperCase();
+    // Expand abbreviations so geocoders match better
+    a = a.replace(/\bBLVD\b/g, "Boulevard");
+    a = a.replace(/\bRD\b/g,   "Road");
+    a = a.replace(/\bST\b/g,   "Street");
+    a = a.replace(/\bAVE\b/g,  "Avenue");
+    a = a.replace(/\bDR\b/g,   "Drive");
+    a = a.replace(/\bCT\b/g,   "Court");
+    a = a.replace(/\bLN\b/g,   "Lane");
+    a = a.replace(/\bPL\b/g,   "Place");
+    a = a.replace(/\bPKWY\b/g, "Parkway");
+    a = a.replace(/\bTRL\b/g,  "Trail");
+    a = a.replace(/\bCIR\b/g,  "Circle");
+    a = a.replace(/\bTER\b/g,  "Terrace");
+    a = a.replace(/\bHWY\b/g,  "Highway");
+    a = a.replace(/\b(?:N\s+)?I[-\s]?75\b/g, "Interstate 75");
+    a = a.replace(/\bSR[-\s](\d+)\b/g, "State Road $1");
+    a = a.replace(/\bUS[-\s]?(\d+)\b/g, "US Highway $1");
+    a = a.replace(/\s*\/\s*/g, " and ");
+    // Title case for better geocoder matching
+    return a.replace(/\b\w/g, function(c) { return c.toUpperCase(); })
+            .replace(/\b(\w)(\w+)/g, function(_, f, r) { return f.toUpperCase() + r.toLowerCase(); });
+  }
+
   async function geocode(address) {
     if (geocodeCache[address] !== undefined) return geocodeCache[address];
+
+    // 1. I-75 mile marker — instant lookup, no geocoding needed
+    var mmResult = checkI75(address);
+    if (mmResult) { geocodeCache[address] = mmResult; return mmResult; }
+
+    var cleaned = preprocessAddress(address);
+
+    // 2. US Census Bureau — most accurate for numbered US street addresses
     try {
-      // Clean up address for Census geocoder
-      var q = address.trim().replace(/\s*\/\s*/g, " and ");
-
-      // US Census Bureau Geocoding API — free, no key, highly accurate for US addresses
-      // For intersections we append the city, for numbered addresses just state
-      var fullAddr = q + ", Sarasota County, FL";
-      var url = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=" +
-                encodeURIComponent(fullAddr) +
-                "&benchmark=Public_AR_Current&format=json";
-
-      var r = await fetch(url);
-      var data = await r.json();
-      var matches = data.result && data.result.addressMatches;
-
+      var censusUrl = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=" +
+                      encodeURIComponent(cleaned + ", Sarasota County, FL") +
+                      "&benchmark=Public_AR_Current&format=json";
+      var cr = await fetch(censusUrl);
+      var cd = await cr.json();
+      var matches = cd.result && cd.result.addressMatches;
       if (matches && matches.length > 0) {
-        var coords = matches[0].coordinates;
-        var lat = coords.y, lng = coords.x;
-        if (inRegion(lat, lng)) {
-          var result = {lat: lat, lng: lng};
-          geocodeCache[address] = result;
-          return result;
+        var cc = matches[0].coordinates;
+        if (inRegion(cc.y, cc.x)) {
+          var r1 = {lat: cc.y, lng: cc.x};
+          geocodeCache[address] = r1;
+          return r1;
         }
       }
+    } catch(e) {}
 
-      // Fallback to Photon if Census returns no match (handles intersections better)
-      var pq = q + " Sarasota Florida";
-      var purl = "https://photon.komoot.io/api/?q=" + encodeURIComponent(pq) +
+    // 3. Photon fallback — better for intersections and partial addresses
+    try {
+      var purl = "https://photon.komoot.io/api/?q=" +
+                 encodeURIComponent(cleaned + " Sarasota Florida") +
                  "&limit=5&lang=en&bbox=-82.90,26.50,-81.60,27.90";
       var pr = await fetch(purl);
-      var pdata = await pr.json();
-      var features = pdata.features || [];
+      var pd = await pr.json();
+      var features = pd.features || [];
       for (var i = 0; i < features.length; i++) {
-        var c = features[i].geometry && features[i].geometry.coordinates;
-        if (!c) continue;
-        var plng = c[0], plat = c[1];
-        if (inRegion(plat, plng)) {
-          var presult = {lat: plat, lng: plng};
-          geocodeCache[address] = presult;
-          return presult;
+        var fc = features[i].geometry && features[i].geometry.coordinates;
+        if (!fc) continue;
+        if (inRegion(fc[1], fc[0])) {
+          var r2 = {lat: fc[1], lng: fc[0]};
+          geocodeCache[address] = r2;
+          return r2;
         }
       }
     } catch(e) {}
