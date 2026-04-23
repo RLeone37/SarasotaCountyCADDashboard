@@ -648,9 +648,13 @@
     if (!location || location.trim().length < 4) return false;
     var l = location.trim().toUpperCase();
     if (/^(GRID|REDACTED|UNKNOWN|N\/A|NONE)$/.test(l)) return false;
-    // Only map if there is a street number (digits at the start)
-    // Excludes: bare street names, intersections, mile marker addresses
-    return /^\d+\s+\w/.test(l);
+    // Exact street number at start
+    if (/^\d+\s+\w/.test(l)) return true;
+    // Intersection (contains /)
+    if (l.indexOf("/") !== -1) return true;
+    // I-75 mile marker (e.g. "210000 N I75" or "N I75 / BEE RIDGE")
+    if (/I[-\s]?75/.test(l)) return true;
+    return false;
   }
 
   var CAT_EMOJI = {fire:"\uD83D\uDD25", marine:"\u26F5", traffic:"\uD83D\uDE97", alarm:"\u26A0", other:"\u26A1"};
@@ -772,8 +776,22 @@
     var cacheKey = address + "|" + (cityHint || "");
     if (geocodeCache[cacheKey] !== undefined) return geocodeCache[cacheKey];
     var city = cityHint || "Sarasota";
+
     try {
-      var q = address.trim() + ", " + city + ", FL";
+      // Format address for Google
+      var q = address.trim();
+
+      // Handle I-75 mile marker format e.g. "210000 N I75" -> "I-75 mile marker 210 Florida"
+      var mmMatch = q.match(/^(\d{3})000\s*(?:N|S)?\s*I[-\s]?75/i);
+      if (mmMatch) {
+        q = "Interstate 75 mile marker " + mmMatch[1] + ", Florida";
+      } else {
+        // Handle intersections: replace / with &
+        q = q.replace(/\s*\/\s*/g, " & ");
+        // Append city and state
+        q = q + ", " + city + ", FL";
+      }
+
       var url = "https://maps.googleapis.com/maps/api/geocode/json?address=" +
                 encodeURIComponent(q) +
                 "&bounds=26.50,-82.90|27.90,-81.60" +
