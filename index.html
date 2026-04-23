@@ -648,12 +648,10 @@
     if (!location || location.trim().length < 4) return false;
     var l = location.trim().toUpperCase();
     if (/^(GRID|REDACTED|UNKNOWN|N\/A|NONE)$/.test(l)) return false;
-    // Exact street number at start
+    // Exact street number at start (e.g. 9450 PIPER RD)
     if (/^\d+\s+\w/.test(l)) return true;
     // Intersection (contains /)
     if (l.indexOf("/") !== -1) return true;
-    // I-75 mile marker (e.g. "210000 N I75" or "N I75 / BEE RIDGE")
-    if (/I[-\s]?75/.test(l)) return true;
     return false;
   }
 
@@ -773,32 +771,52 @@
     return "Sarasota";
   }
 
-  // I-75 mile marker coordinates for Sarasota/Charlotte/Manatee
-  // Centerline coordinates per mile marker along I-75
+  // I-75 mile marker coordinates — Charlotte, Sarasota, Manatee counties
   var I75_MM = {
-    191:{lat:26.9210,lng:-82.1100}, 192:{lat:26.9324,lng:-82.1089},
-    193:{lat:26.9437,lng:-82.1078}, 194:{lat:26.9551,lng:-82.1067},
-    195:{lat:26.9664,lng:-82.1056}, 196:{lat:26.9778,lng:-82.1045},
-    197:{lat:26.9891,lng:-82.1034}, 198:{lat:27.0005,lng:-82.1023},
-    199:{lat:27.0118,lng:-82.1012}, 200:{lat:27.0232,lng:-82.1001},
-    201:{lat:27.0345,lng:-82.0990}, 202:{lat:27.0459,lng:-82.0979},
-    203:{lat:27.0572,lng:-82.0968}, 204:{lat:27.0686,lng:-82.0957},
-    205:{lat:27.0799,lng:-82.0946}, 206:{lat:27.0913,lng:-82.0935},
-    207:{lat:27.1026,lng:-82.0924}, 208:{lat:27.1140,lng:-82.0913},
-    209:{lat:27.1253,lng:-82.0902}, 210:{lat:27.1367,lng:-82.0891},
-    211:{lat:27.1480,lng:-82.0880}, 212:{lat:27.1594,lng:-82.0869},
-    213:{lat:27.1707,lng:-82.0858}
+    // Charlotte County (south end)
+    170:{lat:26.8890,lng:-82.0460}, 171:{lat:26.8990,lng:-82.0520},
+    172:{lat:26.9090,lng:-82.0580}, 173:{lat:26.9190,lng:-82.0640},
+    174:{lat:26.9290,lng:-82.0700}, 175:{lat:26.9380,lng:-82.0760},
+    176:{lat:26.9470,lng:-82.0820}, 177:{lat:26.9560,lng:-82.0870},
+    178:{lat:26.9650,lng:-82.0910},
+    // MM 179 = Exit 179 Toledo Blade Blvd (North Port, Sarasota County)
+    179:{lat:26.9740,lng:-82.0950},
+    180:{lat:26.9830,lng:-82.0980}, 181:{lat:26.9920,lng:-82.1000},
+    182:{lat:27.0010,lng:-82.1020}, 183:{lat:27.0100,lng:-82.1040},
+    184:{lat:27.0190,lng:-82.1055}, 185:{lat:27.0280,lng:-82.1065},
+    186:{lat:27.0370,lng:-82.1070}, 187:{lat:27.0460,lng:-82.1070},
+    188:{lat:27.0550,lng:-82.1068}, 189:{lat:27.0640,lng:-82.1065},
+    190:{lat:27.0730,lng:-82.1060},
+    // MM 191 = Exit 191 River Road
+    191:{lat:27.0820,lng:-82.1055},
+    192:{lat:27.0910,lng:-82.1048}, 193:{lat:27.1000,lng:-82.1040},
+    194:{lat:27.1090,lng:-82.1030}, 195:{lat:27.1180,lng:-82.1018},
+    196:{lat:27.1270,lng:-82.1005}, 197:{lat:27.1360,lng:-82.0990},
+    198:{lat:27.1450,lng:-82.0975}, 199:{lat:27.1540,lng:-82.0960},
+    200:{lat:27.1630,lng:-82.0942}, 201:{lat:27.1720,lng:-82.0922},
+    202:{lat:27.1810,lng:-82.0900}, 203:{lat:27.1900,lng:-82.0878},
+    204:{lat:27.1990,lng:-82.0856},
+    // MM 205 = Exit 205 Clark Road / SR-72
+    205:{lat:27.2080,lng:-82.0833},
+    206:{lat:27.2170,lng:-82.0810}, 207:{lat:27.2260,lng:-82.0786},
+    208:{lat:27.2350,lng:-82.0762}, 209:{lat:27.2440,lng:-82.0738},
+    // MM 210 = Exit 210 Fruitville Road / SR-780
+    210:{lat:27.2530,lng:-82.0713},
+    211:{lat:27.2620,lng:-82.0688}, 212:{lat:27.2710,lng:-82.0663},
+    // MM 213 = Exit 213 University Parkway — Sarasota/Manatee line
+    213:{lat:27.2800,lng:-82.0638},
+    214:{lat:27.2890,lng:-82.0613}, 215:{lat:27.2980,lng:-82.0588}
   };
 
   function checkI75MM(address) {
-    var a = address.toUpperCase();
-    // "210000 N I75" or "210000 I-75" — 6-digit fake house number = MM * 1000
-    var m = a.match(/^(\d{3})000\s*[NS]?\s*I[-\s]?75/);
-    if (m) { var mm = parseInt(m[1]); if (I75_MM[mm]) return I75_MM[mm]; }
-    // "N I75 / BEE RIDGE RD" or just contains I-75 with no cross street number
-    // Use midpoint of county as fallback for I-75 with no MM
-    if (/\bI[-\s]?75\b/.test(a) && !/^\d+\s/.test(a)) {
-      return {lat: 27.05, lng: -82.10};
+    var a = address.toUpperCase().trim();
+    // Match: 183000 S I75, 210000 N I75, 195000 I-75, 200000 I75 etc.
+    var m = a.match(/^(\d{3})000\s*[NS]?\s*I[-\s]?75\b/);
+    if (m) {
+      var mm = parseInt(m[1]);
+      if (I75_MM[mm]) return I75_MM[mm];
+      // If MM not in table, interpolate on I-75 centerline
+      return {lat: 26.92 + (mm - 183) * 0.013, lng: -82.10};
     }
     return null;
   }
