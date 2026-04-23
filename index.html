@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sarasota County CAD Feed</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -31,7 +31,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: 'Inter', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -104,17 +104,17 @@
   }
 
   .brand-sub {
-    font-family: 'Share Tech Mono', monospace;
+    font-family: 'Inter', sans-serif; font-weight: 300;
     font-size: 11px; letter-spacing: 3px; color: var(--muted);
-    margin-top: 2px; white-space: nowrap;
+    margin-top: 2px; white-space: nowrap; text-transform: uppercase;
   }
 
   .live-pill {
     display: flex; align-items: center; gap: 6px;
     background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.3);
-    padding: 6px 12px; font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; letter-spacing: 2px; color: var(--green);
-    text-shadow: 0 0 8px var(--green);
+    padding: 6px 12px; font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 12px; letter-spacing: 3px; color: var(--green);
+    text-shadow: 0 0 8px var(--green); text-transform: uppercase;
   }
 
   .live-dot {
@@ -125,7 +125,7 @@
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
   #clock {
-    font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 600;
+    font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 600;
     color: var(--accent); letter-spacing: 3px;
     text-shadow: 0 0 12px rgba(0,212,255,0.6);
   }
@@ -150,7 +150,7 @@
   .stat:last-child { border-right: none; }
 
   .stat-num {
-    font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 900;
+    font-family: 'Rajdhani', sans-serif; font-size: 48px; font-weight: 700;
     line-height: 1; color: var(--accent);
     text-shadow: 0 0 20px rgba(0,212,255,0.5); transition: all 0.4s;
   }
@@ -159,8 +159,9 @@
   .stat-num.green { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,0.5); }
 
   .stat-label {
-    font-family: 'Share Tech Mono', monospace; font-size: 12px;
-    letter-spacing: 3px; color: var(--muted); margin-top: 4px; text-transform: uppercase;
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 12px; letter-spacing: 4px; color: var(--muted);
+    margin-top: 4px; text-transform: uppercase;
   }
 
   /* ===== AGENCY FILTER ROW ===== */
@@ -174,7 +175,7 @@
   .agency-btn {
     flex-shrink: 0; padding: 10px 16px;
     background: transparent; border: none; border-bottom: 2px solid transparent;
-    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400;
     font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
@@ -201,16 +202,16 @@
   }
 
   .map-title {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600;
-    letter-spacing: 4px; color: var(--accent2); text-transform: uppercase;
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 12px; letter-spacing: 4px; color: var(--accent2); text-transform: uppercase;
   }
 
   .map-legend { display: flex; gap: 16px; align-items: center; }
 
   .legend-item {
     display: flex; align-items: center; gap: 6px;
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    letter-spacing: 1.5px; color: var(--muted);
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
   }
 
   .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -237,7 +238,7 @@
   .tab {
     flex: 1; min-width: 70px; padding: 12px 4px;
     background: transparent; border: none; border-bottom: 2px solid transparent;
-    color: var(--muted); font-family: 'Share Tech Mono', monospace;
+    color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400;
     font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s; white-space: nowrap;
   }
@@ -317,30 +318,30 @@
   .inc-body { flex: 1; min-width: 0; }
 
   .inc-type {
-    font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600;
+    font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 600;
     color: var(--text2); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; letter-spacing: 1.5px; text-transform: uppercase;
+    text-overflow: ellipsis; letter-spacing: 1px;
   }
 
   .inc-addr {
-    font-family: 'Share Tech Mono', monospace; font-size: 13px;
-    color: var(--text); margin-top: 5px; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
+    font-family: 'Inter', sans-serif; font-weight: 400;
+    font-size: 14px; color: var(--text); margin-top: 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  .inc-addr.no-addr { color: var(--muted); font-style: italic; font-size: 12px; }
+  .inc-addr.no-addr { color: var(--muted); font-style: italic; font-size: 13px; }
 
   .inc-case {
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    color: var(--muted); margin-top: 6px; letter-spacing: 1px;
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.5px;
   }
 
   /* Agency tag */
   .agency-tag {
-    display: inline-block; font-family: 'Share Tech Mono', monospace;
-    font-size: 10px; letter-spacing: 1px; padding: 2px 7px;
+    display: inline-block; font-family: 'Inter', sans-serif; font-weight: 500;
+    font-size: 10px; letter-spacing: 1.5px; padding: 2px 7px;
     border: 1px solid var(--border); color: var(--muted);
-    margin-right: 6px; vertical-align: middle;
+    margin-right: 6px; vertical-align: middle; text-transform: uppercase;
   }
   .agency-tag.npfd { border-color:rgba(255,96,96,0.4); color:#ff6060; }
   .agency-tag.scfd { border-color:rgba(0,212,255,0.3); color:var(--accent2); }
@@ -352,32 +353,32 @@
   .inc-meta { text-align: right; flex-shrink: 0; }
 
   .inc-time {
-    font-family: 'Share Tech Mono', monospace; font-size: 16px; font-weight: 400;
+    font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600;
     color: var(--accent); letter-spacing: 2px;
     text-shadow: 0 0 8px rgba(0,212,255,0.4);
   }
 
   .inc-date {
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    color: var(--muted); margin-top: 3px; letter-spacing: 1px;
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 1px;
   }
 
   .status-badge {
-    display: inline-block; font-family: 'Share Tech Mono', monospace;
-    font-size: 9px; letter-spacing: 1.5px; padding: 3px 7px;
+    display: inline-block; font-family: 'Inter', sans-serif; font-weight: 500;
+    font-size: 9px; letter-spacing: 2px; padding: 3px 7px;
     margin-top: 5px; text-transform: uppercase;
   }
   .badge-today { background:rgba(255,58,58,0.12); color:var(--red); border:1px solid rgba(255,58,58,0.3); text-shadow:0 0 6px rgba(255,58,58,0.5); }
   .badge-older { background:rgba(30,50,80,0.3); color:var(--muted); border:1px solid var(--border); }
 
   #last-updated {
-    text-align: center; font-family: 'Share Tech Mono', monospace;
+    text-align: center; font-family: 'Inter', sans-serif; font-weight: 300;
     font-size: 12px; color: var(--muted); letter-spacing: 2px; padding: 16px;
-    position: relative; z-index: 1;
+    position: relative; z-index: 1; text-transform: uppercase;
   }
 
   .source-note {
-    text-align: center; font-family: 'Share Tech Mono', monospace;
+    text-align: center; font-family: 'Inter', sans-serif; font-weight: 300;
     font-size: 11px; color: var(--dim); letter-spacing: 1px;
     padding: 0 14px 24px; position: relative; z-index: 1;
   }
