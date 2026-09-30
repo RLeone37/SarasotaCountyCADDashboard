@@ -1,0 +1,14 @@
+# Cloudflare Worker config for the dashboard proxy/geocoder (see worker.js).
+# Deploy: npx wrangler deploy
+# Secret: npx wrangler secret put GOOGLE_KEY
+name = "sarasota-cad-proxy"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# Don't wipe variables set in the Cloudflare dashboard (e.g. ALLOWED_ORIGINS) on deploy
+keep_vars = true
+
+# Geocode result cache (see worker.js)
+[[kv_namespaces]]
+binding = "GEOCACHE"
+id = "06bc1774b0084afb893874e244e61829"

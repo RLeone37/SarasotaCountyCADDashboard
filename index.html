@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sarasota County CAD Feed</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -81,7 +81,7 @@
   .header-row1 { display: flex; align-items: center; gap: 10px; }
 
   .header-row2 {
-    display: flex; align-items: center; justify-content: flex-end;
+    display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
     gap: 8px; margin-top: 8px; padding-top: 8px;
     border-top: 1px solid var(--border);
   }
@@ -129,6 +129,26 @@
   }
 
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Feed health: live (default) / stale / offline */
+  .live-pill.stale   { background: rgba(255,187,0,0.06); border-color: rgba(255,187,0,0.35); color: var(--amber); text-shadow: 0 0 8px var(--amber); }
+  .live-pill.stale .live-dot   { background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: none; }
+  .live-pill.offline { background: rgba(255,58,58,0.06); border-color: rgba(255,58,58,0.35); color: var(--red); text-shadow: 0 0 8px var(--red); }
+  .live-pill.offline .live-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  #data-age {
+    font-family: 'Inter', sans-serif; font-weight: 300; font-size: 11px;
+    letter-spacing: 2px; color: var(--muted); text-transform: uppercase; white-space: nowrap;
+  }
+  #data-age.stale   { color: var(--amber); }
+  #data-age.offline { color: var(--red); }
+
+  .sound-btn {
+    background: rgba(0,180,255,0.05); border: 1px solid var(--border2);
+    color: var(--muted); font-size: 16px; padding: 6px 10px; cursor: pointer;
+    transition: all 0.2s; line-height: 1;
+  }
+  .sound-btn[aria-pressed="true"] { color: var(--green); border-color: rgba(0,255,136,0.4); }
 
   #clock {
     font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 600;
@@ -198,6 +218,7 @@
   .agency-btn.efd.active   { color: var(--amber); border-bottom-color: var(--amber); background: rgba(255,187,0,0.05); }
   .agency-btn.nvfd.active  { color: #80ff80; border-bottom-color: #80ff80; background: rgba(128,255,128,0.05); }
   .agency-btn.other.active { color: #c080ff; border-bottom-color: #c080ff; background: rgba(192,128,255,0.05); }
+  .agency-btn.fhp.active   { color: #ffd24a; border-bottom-color: #ffd24a; background: rgba(255,210,74,0.05); }
 
   /* ===== MAP ===== */
   .map-section { border-bottom: 1px solid var(--border2); position: relative; z-index: 1; }
@@ -345,7 +366,104 @@
     .list-col { overflow: visible; height: auto; }
 
     #incident-list { overflow: visible; flex: none; }
+
   }
+
+  /* ===== MAP VIEW TOGGLE / PULSEPOINT EMBED ===== */
+  .map-tabs { display: flex; gap: 4px; }
+  .map-tab {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 400;
+    font-size: 10px; letter-spacing: 2px; padding: 4px 10px;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .map-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(0,212,255,0.06); }
+  .map-tab.pp.active { color: #ff6b6b; border-color: #ff6b6b; background: rgba(255,58,58,0.07); }
+  .map-tab:focus-visible, .agency-btn:focus-visible, .tab:focus-visible, .refresh-btn:focus-visible,
+  .sound-btn:focus-visible, .pp-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+  /* Map body holds the Leaflet map and/or the PulsePoint panel */
+  .map-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  .pp-panel {
+    display: none; flex: 1; flex-direction: column; min-height: 0;
+    padding: 10px; gap: 8px;
+    background:
+      radial-gradient(ellipse at top left, rgba(255,58,58,0.07), transparent 60%),
+      linear-gradient(180deg, #0a1626 0%, #07111e 100%);
+  }
+  .map-section.view-pp  #map { display: none; }
+  .map-section.view-pp  .pp-panel { display: flex; }
+  .map-section.view-pp  .map-legend { display: none; }
+  .map-section.view-split .pp-panel { display: flex; border-top: 1px solid var(--border2); }
+
+  .pp-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+  .pp-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .pp-pulse {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--red); flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(255,58,58,0.6); animation: pp-pulse 1.6s ease-out infinite;
+  }
+  @keyframes pp-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,58,58,0.6); }
+    70%  { box-shadow: 0 0 0 10px rgba(255,58,58,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,58,58,0); }
+  }
+  .pp-name {
+    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px;
+    letter-spacing: 3px; color: var(--text2); text-transform: uppercase; white-space: nowrap;
+  }
+  .pp-sub {
+    font-family: 'Inter', sans-serif; font-weight: 300; font-size: 10px;
+    letter-spacing: 2px; color: var(--muted); text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pp-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .pp-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 28px; padding: 0 8px;
+    background: rgba(0,180,255,0.04); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Inter', sans-serif; font-size: 13px;
+    cursor: pointer; text-decoration: none; transition: all 0.2s;
+  }
+  .pp-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .pp-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--border2); }
+
+  .pp-frame-wrap {
+    position: relative; flex: 1; min-height: 0;
+    border: 1px solid var(--border2); border-radius: 6px; overflow: hidden;
+    background: var(--surface);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 8px 30px rgba(0,0,0,0.45), 0 0 24px rgba(255,58,58,0.06);
+  }
+  #pp-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--surface); }
+  /* Dark rendering: invert PulsePoint's light UI, then rotate hues back so reds stay red */
+  .pp-dark #pp-frame { filter: invert(0.9) hue-rotate(180deg) saturate(1.1) contrast(0.95); }
+
+  .pp-loading {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: var(--surface); color: var(--muted);
+    font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 3px;
+    transition: opacity 0.4s; z-index: 2; text-align: center; padding: 0 20px;
+  }
+  .pp-loading.hidden { opacity: 0; pointer-events: none; }
+  .pp-loading a { color: var(--accent2); }
+
+  .map-header { flex-wrap: wrap; gap: 8px; }
+  .map-tab { white-space: nowrap; }
+  .pp-title > div { min-width: 0; overflow: hidden; }
+
+  /* Mobile: the page scrolls, so map and PulsePoint get fixed heights instead of sharing the column */
+  @media (max-width: 768px) {
+    .map-col #map { flex: none; }
+    .pp-panel { flex: none; height: 640px; }
+    .map-section.view-split .pp-panel { height: 560px; }
+    .map-header { padding: 8px 12px; }
+  }
+  @media (max-width: 480px) {
+    .map-legend { display: none; }
+  }
+
+  #status-bar {
     font-family: 'Share Tech Mono', monospace; font-size: 11px;
     letter-spacing: 2px; padding: 7px 18px; text-align: center;
     display: none; position: relative; z-index: 1;
@@ -384,12 +502,35 @@
   .inc-card.is-today { border-left-color: var(--red); background: rgba(255,58,58,0.04); }
   .inc-card.is-older { opacity: 0.7; }
   .inc-card.highlighted { background: rgba(0,212,255,0.05) !important; border-left-color: var(--accent) !important; opacity: 1 !important; }
+  .inc-card:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+  /* Incidents that arrived since the dashboard was opened */
+  .inc-card.is-new { animation: fadein 0.3s ease, new-glow 2s ease-in-out 3; }
+  @keyframes new-glow {
+    0%,100% { box-shadow: inset 0 0 0 0 rgba(0,255,136,0); }
+    50%     { box-shadow: inset 0 0 0 1px rgba(0,255,136,0.5), inset 0 0 24px rgba(0,255,136,0.08); }
+  }
+  .badge-new { background:rgba(0,255,136,0.1); color:var(--green); border:1px solid rgba(0,255,136,0.35); text-shadow:0 0 6px rgba(0,255,136,0.5); margin-right: 4px; }
+
+  /* "Not mapped" indicator on cards */
+  .map-flag {
+    display: inline-block; font-family: 'Inter', sans-serif; font-weight: 400;
+    font-size: 9px; letter-spacing: 1.5px; padding: 2px 6px; margin-left: 2px;
+    border: 1px dashed var(--dim); color: var(--muted); text-transform: uppercase;
+    vertical-align: middle; cursor: help;
+  }
+  .map-flag[data-state="ok"] { display: none; }
+  .map-flag[data-state="pending"] { border-style: dotted; opacity: 0.7; }
+
+  /* Cards already on screen before a refresh don't replay their entrance animation */
+  .inc-card.settled, .inc-card.settled.is-new { animation: none; }
 
   /* Agency color left border overrides */
   .inc-card.agency-npfd.is-today { border-left-color: #ff6060; }
   .inc-card.agency-vfd.is-today  { border-left-color: #60c0ff; }
   .inc-card.agency-efd.is-today  { border-left-color: var(--amber); }
   .inc-card.agency-nvfd.is-today { border-left-color: #80ff80; }
+  .inc-card.agency-fhp.is-today  { border-left-color: #ffd24a; }
 
   .inc-icon {
     width: 52px; height: 52px;
@@ -444,6 +585,13 @@
   .agency-tag.efd  { border-color:rgba(255,187,0,0.3); color:var(--amber); }
   .agency-tag.nvfd { border-color:rgba(128,255,128,0.3); color:#80ff80; }
   .agency-tag.other { border-color:rgba(192,128,255,0.3); color:#c080ff; }
+  .agency-tag.fhp  { border-color:rgba(255,210,74,0.4); color:#ffd24a; }
+
+  .inc-notes {
+    font-family: 'Inter', sans-serif; font-weight: 300;
+    font-size: 12px; color: var(--muted); margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 
   .inc-meta { text-align: right; flex-shrink: 0; }
 
@@ -495,9 +643,11 @@
     </div>
   </div>
   <div class="header-row2">
-    <div class="live-pill"><div class="live-dot"></div>ONLINE</div>
+    <div id="data-age" title="Time since the feed last updated successfully">SYNCING</div>
+    <div class="live-pill" id="live-pill" role="status"><div class="live-dot"></div><span id="live-text">CONNECTING</span></div>
     <div id="clock">--:--:--</div>
-    <button class="refresh-btn" id="refresh-btn" onclick="loadIncidents()">&#x21BB;</button>
+    <button class="sound-btn" id="sound-btn" aria-pressed="false" title="Sound alert for new incidents" aria-label="Sound alert for new incidents">&#x1F515;</button>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadIncidents()" title="Refresh now" aria-label="Refresh now">&#x21BB;</button>
   </div>
 </header>
 
@@ -516,6 +666,7 @@
   <button class="agency-btn efd"   onclick="setAgency('efd',this)">Englewood</button>
   <button class="agency-btn nvfd"  onclick="setAgency('nvfd',this)">Nokomis</button>
   <button class="agency-btn other" onclick="setAgency('other',this)">Other</button>
+  <button class="agency-btn fhp"   onclick="setAgency('fhp',this)">FHP Traffic</button>
 </div>
 
 <!-- SIDE BY SIDE: map left, list right -->
@@ -523,15 +674,42 @@
 
   <!-- LEFT: Map column -->
   <div class="map-col">
-    <div class="map-section">
+    <div class="map-section" id="map-section">
       <div class="map-header">
-        <div class="map-title">Sarasota County, FL</div>
+        <div class="map-tabs">
+          <button class="map-tab active" data-view="map">Map</button>
+          <button class="map-tab" data-view="split">Split</button>
+          <button class="map-tab pp" data-view="pp">&#x2665; PulsePoint</button>
+        </div>
         <div class="map-legend">
           <div class="legend-item"><div class="legend-dot" style="background:#ff3a3a;box-shadow:0 0 4px #ff3a3a"></div>TODAY</div>
           <div class="legend-item"><div class="legend-dot" style="background:#2a4a66"></div>PRIOR</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ffd24a;box-shadow:0 0 4px #ffd24a"></div>FHP</div>
         </div>
       </div>
-      <div id="map"></div>
+      <div class="map-body">
+        <div id="map"></div>
+        <div class="pp-panel pp-dark" id="pp-panel">
+          <div class="pp-bar">
+            <div class="pp-title">
+              <span class="pp-pulse"></span>
+              <div>
+                <div class="pp-name">PulsePoint</div>
+                <div class="pp-sub">Sarasota Co. // Fire + EMS incl. medical</div>
+              </div>
+            </div>
+            <div class="pp-actions">
+              <button class="pp-btn" id="pp-theme" aria-pressed="true" title="Dark rendering" aria-label="Toggle dark rendering">&#x25D0;</button>
+              <button class="pp-btn" id="pp-reload" title="Reload PulsePoint" aria-label="Reload PulsePoint">&#x21BB;</button>
+              <a class="pp-btn" id="pp-open" target="_blank" rel="noopener" title="Open PulsePoint in a new tab" aria-label="Open PulsePoint in a new tab">&#x2197;</a>
+            </div>
+          </div>
+          <div class="pp-frame-wrap">
+            <iframe id="pp-frame" title="PulsePoint Respond - Sarasota County"></iframe>
+            <div class="pp-loading" id="pp-loading"><div class="spinner"></div><span>CONNECTING TO PULSEPOINT...</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -552,7 +730,9 @@
     </div>
     <div class="list-footer">
       <div id="last-updated"></div>
-      <div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a></div>
+      <div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a>
+        // <a href="https://trafficincidents.flhsmv.gov/SmartWebClient/CadView.aspx" target="_blank">FHP Traffic Incidents</a>
+        // <a href="https://web.pulsepoint.org/?agencies=16072" target="_blank">PulsePoint</a></div>
     </div>
   </div>
 
@@ -561,13 +741,58 @@
 <script>
   var WORKER_URL = "https://sarasota-cad-proxy.yanks126.workers.dev";
 
+  // PulsePoint agency 16072 = Sarasota County [FL] (covers SCFD, North Port, Venice, Englewood, Nokomis, etc.)
+  var PULSEPOINT_URL = "https://web.pulsepoint.org/?agencies=16072";
+
+  // FHP statewide feed is filtered down to these counties (uppercase, as FHP spells them)
+  var FHP_COUNTIES = ["SARASOTA"];
+
+  var REFRESH_MS    = 60000;        // feed poll interval
+  var STALE_MS      = 3 * 60000;    // no successful sync for this long -> STALE
+  var OFFLINE_MS    = 10 * 60000;   // ...or this long -> OFFLINE
+  var NEW_WINDOW_MS = 5 * 60000;    // how long an incident is flagged NEW after it first appears
+
+  // Per-viewer preferences (view mode, sound, PulsePoint theme). Storage can be unavailable; never rely on it.
+  function prefGet(k, d) { try { var v = localStorage.getItem("sccad_" + k); return v === null ? d : v; } catch(e) { return d; } }
+  function prefSet(k, v) { try { localStorage.setItem("sccad_" + k, v); } catch(e) {} }
+
+  // ===== Clock + feed health =====
+  var lastSuccess = 0;     // epoch ms of last successful sync
+  var lastAttemptFailed = false;
+
+  function fmtAge(ms) {
+    var s = Math.floor(ms / 1000);
+    if (s < 60) return s + "s ago";
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + "m ago";
+    return Math.floor(m / 60) + "h " + (m % 60) + "m ago";
+  }
+
   function tick() {
     document.getElementById("clock").textContent =
       new Date().toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false});
+
+    var pill = document.getElementById("live-pill");
+    var text = document.getElementById("live-text");
+    var age  = document.getElementById("data-age");
+    if (!lastSuccess) {
+      var failed = lastAttemptFailed;
+      pill.className = "live-pill" + (failed ? " offline" : "");
+      text.textContent = failed ? "OFFLINE" : "CONNECTING";
+      age.className = failed ? "offline" : "";
+      age.textContent = failed ? "NO DATA" : "SYNCING";
+      return;
+    }
+    var ms = Date.now() - lastSuccess;
+    var state = ms >= OFFLINE_MS ? "offline" : (ms >= STALE_MS ? "stale" : "");
+    pill.className = "live-pill" + (state ? " " + state : "");
+    text.textContent = state === "offline" ? "OFFLINE" : (state === "stale" ? "STALE" : "LIVE");
+    age.className = state;
+    age.textContent = "Updated " + fmtAge(ms);
   }
   setInterval(tick, 1000); tick();
 
-  // Map centered on Sarasota County
+  // ===== Map =====
   var SC_LAT = 27.10, SC_LNG = -82.25;
   var map = L.map("map", {center:[SC_LAT, SC_LNG], zoom:10, zoomControl:true, attributionControl:false});
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:18}).addTo(map);
@@ -596,24 +821,40 @@
   }
 
   var ICONS = {
-    fire_today:    makeIcon("rgba(255,80,0,0.9)",   "rgba(255,100,0,0.8)",  "\uD83D\uDD25"),
-    traffic_today: makeIcon("rgba(0,160,255,0.9)",  "rgba(0,200,255,0.8)",  "\uD83D\uDE97"),
-    alarm_today:   makeIcon("rgba(255,180,0,0.9)",  "rgba(255,200,0,0.8)",  "\u26A0"),
-    marine_today:  makeIcon("rgba(0,140,220,0.9)",  "rgba(0,180,255,0.8)",  "\u26F5"),
-    other_today:   makeIcon("rgba(60,120,180,0.9)", "rgba(80,150,220,0.8)", "\u26A1"),
-    fire_older:    makeIcon("rgba(80,40,0,0.6)",    "rgba(120,60,0,0.4)",   "\uD83D\uDD25"),
-    traffic_older: makeIcon("rgba(0,60,100,0.6)",   "rgba(0,100,150,0.4)",  "\uD83D\uDE97"),
-    alarm_older:   makeIcon("rgba(80,60,0,0.6)",    "rgba(120,100,0,0.4)",  "\u26A0"),
-    marine_older:  makeIcon("rgba(0,50,90,0.6)",    "rgba(0,80,140,0.4)",   "\u26F5"),
-    other_older:   makeIcon("rgba(20,40,60,0.6)",   "rgba(40,70,100,0.4)",  "\u26A1"),
+    fire_today:    makeIcon("rgba(255,80,0,0.9)",   "rgba(255,100,0,0.8)",  "🔥"),
+    traffic_today: makeIcon("rgba(0,160,255,0.9)",  "rgba(0,200,255,0.8)",  "🚗"),
+    alarm_today:   makeIcon("rgba(255,180,0,0.9)",  "rgba(255,200,0,0.8)",  "⚠"),
+    marine_today:  makeIcon("rgba(0,140,220,0.9)",  "rgba(0,180,255,0.8)",  "⛵"),
+    other_today:   makeIcon("rgba(60,120,180,0.9)", "rgba(80,150,220,0.8)", "⚡"),
+    fire_older:    makeIcon("rgba(80,40,0,0.6)",    "rgba(120,60,0,0.4)",   "🔥"),
+    traffic_older: makeIcon("rgba(0,60,100,0.6)",   "rgba(0,100,150,0.4)",  "🚗"),
+    alarm_older:   makeIcon("rgba(80,60,0,0.6)",    "rgba(120,100,0,0.4)",  "⚠"),
+    marine_older:  makeIcon("rgba(0,50,90,0.6)",    "rgba(0,80,140,0.4)",   "⛵"),
+    other_older:   makeIcon("rgba(20,40,60,0.6)",   "rgba(40,70,100,0.4)",  "⚡"),
+    fhp_today:     makeIcon("rgba(40,30,0,0.9)",    "rgba(255,210,74,0.9)", "🚓"),
+    fhp_older:     makeIcon("rgba(40,30,0,0.6)",    "rgba(160,130,40,0.5)", "🚓"),
   };
 
-  var mapMarkers = [];
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
+      return {"&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;"}[c];
+    });
+  }
+
+  var markersById = {};    // incident _id -> Leaflet marker (kept across refreshes so open popups survive)
   var allIncidents = [];
   var currentFilter = "all";
   var currentAgency = "all";
-  var geocodeCache = {};
-  var idCounter = 0;
+  var selectedId = null;   // highlighted card, survives refreshes
+  var fitPending = true;   // re-fit the map on first load and on filter changes, not on background refreshes
+  var renderSeq = 0;       // guards against overlapping async map renders
+  var firstSeen = {};      // _id -> epoch ms first seen (0 = present on initial load)
+  var initialLoadDone = false;
+
+  // Stable, DOM-safe incident id from its source + case number, so it survives refreshes
+  function makeId(prefix, s) {
+    return prefix + "-" + String(s || "").replace(/[^A-Za-z0-9_-]/g, "");
+  }
 
   // Determine agency from case number prefix
   function getAgency(caseNum) {
@@ -629,7 +870,7 @@
   }
 
   function getAgencyLabel(agency) {
-    var labels = {npfd:"N.PORT", scfd:"SCFD", vfd:"VENICE", efd:"ENGLEWOOD", nvfd:"NOKOMIS", lbfd:"LBKEY", other:"OTHER"};
+    var labels = {npfd:"N.PORT", scfd:"SCFD", vfd:"VENICE", efd:"ENGLEWOOD", nvfd:"NOKOMIS", lbfd:"LBKEY", fhp:"FHP", other:"OTHER"};
     return labels[agency] || "OTHER";
   }
 
@@ -655,7 +896,7 @@
     return false;
   }
 
-  var CAT_EMOJI = {fire:"\uD83D\uDD25", marine:"\u26F5", traffic:"\uD83D\uDE97", alarm:"\u26A0", other:"\u26A1"};
+  var CAT_EMOJI = {fire:"🔥", marine:"⛵", traffic:"🚗", alarm:"⚠", other:"⚡"};
   var CAT_CLS   = {fire:"icon-fire", marine:"icon-marine", traffic:"icon-traffic", alarm:"icon-alarm", other:"icon-other"};
 
   function getTodayStr() {
@@ -666,10 +907,13 @@
     return mm + "/" + dd + "/" + yy;
   }
 
-  function setStatus(msg, cls) {
+  var statusTimer = null;
+  function setStatus(msg, cls, clearAfterMs) {
     var el = document.getElementById("status-bar");
     el.className = cls || "";
     el.textContent = msg;
+    clearTimeout(statusTimer);
+    if (clearAfterMs) statusTimer = setTimeout(function() { setStatus("", ""); }, clearAfterMs);
   }
 
   function parseDispatchHTML(html) {
@@ -705,7 +949,8 @@
         location: location, grid: grid, zone: zone,
         caseNum: caseNum, agency: getAgency(caseNum),
         isToday: currentDate === todayStr,
-        mappable: hasAddress(location)
+        mappable: hasAddress(location),
+        _ts: cadTimestamp(currentDate, time)
       });
     });
 
@@ -738,7 +983,10 @@
           agencies:  [row.agency],
           isToday:   row.isToday,
           mappable:  row.mappable,
-          _id:       "inc" + (++idCounter)
+          source:    "cad",
+          cat:       category(row.eventType),
+          _ts:       row._ts,
+          _id:       makeId("cad", row.caseNum)
         });
       }
     });
@@ -746,8 +994,82 @@
     return merged;
   }
 
-  var GOOGLE_KEY = "AIzaSyBowH_UlTDT0L9cCLoEi34tlChTFA6i2q4";
+  // "09/30/26" + "10:14" -> epoch ms (0 if unparseable, which sorts to the bottom)
+  function cadTimestamp(date, time) {
+    var d = (date || "").match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+    var t = (time || "").match(/^(\d{1,2}):(\d{2})/);
+    if (!d || !t) return 0;
+    return new Date(2000 + (+d[3]), +d[1] - 1, +d[2], +t[1], +t[2]).getTime();
+  }
 
+  // FHP incident type codes seen on trafficincidents.flhsmv.gov; unknown codes display as-is
+  var FHP_TYPES = {
+    S3: "HIT AND RUN CRASH", S4: "VEHICLE CRASH", S4I: "VEHICLE CRASH W/INJURIES",
+    S4R: "VEHICLE CRASH W/ROADBLOCK", S4IR: "VEHICLE CRASH W/INJURIES AND ROADBLOCK",
+    S7: "FATALITY", S14A: "TRAVEL ADVISORY", S16C: "CONSTRUCTION",
+    S16D: "ROADWAY DEBRIS/OBJECT", S25P: "FIRE - PRESCRIBED BURN", S25S: "FIRE - STRUCTURE",
+    S76R: "DISABLED VEHICLE IN ROADWAY"
+  };
+
+  // Parse the FHP CAD RSS feed. Each <description> is "Key: value<BR>Key: value..."
+  function parseFhpRss(xml) {
+    var doc = new DOMParser().parseFromString(xml, "text/xml");
+    var todayStr = getTodayStr();
+    var out = [];
+
+    doc.querySelectorAll("item").forEach(function(item) {
+      var titleEl = item.querySelector("title");
+      var descEl = item.querySelector("description");
+      if (!descEl) return;
+
+      var f = {};
+      descEl.textContent.split(/<br\s*\/?>/i).forEach(function(part) {
+        var i = part.indexOf(":");
+        if (i > 0) f[part.slice(0, i).trim()] = part.slice(i + 1).trim();
+      });
+
+      var county = (f["County"] || "").toUpperCase();
+      if (FHP_COUNTIES.indexOf(county) === -1) return;
+
+      var lat = parseFloat(f["Latitude"]), lng = parseFloat(f["Longitude"]);
+      var hasCoords = !isNaN(lat) && !isNaN(lng) && inRegion(lat, lng);
+
+      // "9/30/2026 10:52:09 AM"
+      var when = new Date(f["CAD Date"] || "");
+      var ok = !isNaN(when.getTime());
+      var date = ok ? String(when.getMonth()+1).padStart(2,"0") + "/" + String(when.getDate()).padStart(2,"0") + "/" + String(when.getFullYear()).slice(-2) : "";
+      var time = ok ? String(when.getHours()).padStart(2,"0") + ":" + String(when.getMinutes()).padStart(2,"0") : "";
+
+      var code = (f["Incident Type"] || "").toUpperCase();
+      var type = FHP_TYPES[code] || code || "TRAFFIC INCIDENT";
+      // "I-75 SB x[MM205]" -> "I-75 SB / MM205"
+      var loc = (f["Location"] || "").replace(/\s*x\[([^\]]*)\]/, " / $1").replace(/\s+/g, " ").trim();
+      var city = (f["City"] || "").trim();
+      var id = titleEl ? titleEl.textContent.replace(/^.*:\s*/, "").trim() : "";
+
+      out.push({
+        date: date, time: time, eventType: type,
+        location: loc + (city ? ", " + city : ""),
+        notes: (f["Remarks"] || "").trim(),
+        zone: city, grid: "",
+        caseNum: id, caseNums: [id],
+        agency: "fhp", agencies: ["fhp"],
+        isToday: date === todayStr,
+        mappable: hasCoords,
+        _lat: hasCoords ? lat : undefined,
+        _lng: hasCoords ? lng : undefined,
+        _geo: hasCoords ? "ok" : "none",
+        source: "fhp",
+        cat: /FIRE/.test(type) ? "fire" : "traffic",
+        _ts: ok ? when.getTime() : 0,
+        _id: makeId("fhp", id)
+      });
+    });
+
+    return out;
+  }
+
+  // ===== Geocoding (via the worker, which holds the Google key and caches results) =====
   var SC_BOUNDS = {
     minLat: 26.50, maxLat: 27.90,
     minLng: -82.90, maxLng: -81.60
@@ -819,177 +1141,236 @@
     return null;
   }
 
-  async function geocode(address, cityHint) {
-    var cacheKey = address + "|" + (cityHint || "");
-    if (geocodeCache[cacheKey] !== undefined) return geocodeCache[cacheKey];
+  // Query -> {lat,lng} | null. Successful lookups persist in this browser; misses only for this session.
+  var GEO_STORE_KEY = "geocache_v1";
+  var geocodeCache = {};
+  var geoStored = {};
+  try { geoStored = JSON.parse(prefGet(GEO_STORE_KEY, "{}")) || {}; } catch(e) { geoStored = {}; }
+  Object.keys(geoStored).forEach(function(q) { geocodeCache[q] = geoStored[q]; });
+  var geoInflight = {};
+  var geoSaveTimer = null;
+  var geoError = null;     // last geocoder failure (worker misconfigured, quota, network); null when healthy
 
-    // Check I-75 mile marker first
+  function rememberGeo(q, result) {
+    geocodeCache[q] = result;
+    if (!result) return;
+    geoStored[q] = result;
+    clearTimeout(geoSaveTimer);
+    geoSaveTimer = setTimeout(function() {
+      var keys = Object.keys(geoStored);
+      // Keep the store bounded; drop the oldest insertions first
+      if (keys.length > 1500) keys.slice(0, keys.length - 1500).forEach(function(k) { delete geoStored[k]; });
+      prefSet(GEO_STORE_KEY, JSON.stringify(geoStored));
+    }, 1000);
+  }
+
+  // Resolve one free-form query through the worker. Transient failures are not cached, so they retry next refresh.
+  function geocodeQuery(q) {
+    if (geocodeCache[q] !== undefined) return Promise.resolve(geocodeCache[q]);
+    if (geoInflight[q]) return geoInflight[q];
+    geoInflight[q] = fetch(WORKER_URL + "?geocode=" + encodeURIComponent(q))
+      .then(function(r) {
+        if (r.ok) return r.json();
+        return r.json().catch(function() { return {}; }).then(function(d) {
+          throw new Error((d.error || ("HTTP " + r.status)) + (d.detail ? ": " + d.detail : ""));
+        });
+      })
+      .then(function(d) {
+        geoError = null;
+        var result = (d && typeof d.lat === "number" && inRegion(d.lat, d.lng)) ? {lat: d.lat, lng: d.lng} : null;
+        rememberGeo(q, result);
+        return result;
+      })
+      .catch(function(err) { geoError = err.message; return null; })
+      .finally(function() { delete geoInflight[q]; });
+    return geoInflight[q];
+  }
+
+  async function geocode(address, cityHint) {
+    // I-75 mile markers: try the geocoder, fall back to the local table
     var mmCheck = checkI75MM(address);
     if (mmCheck && mmCheck.mmOnly) {
-      // Send to Google as a milepost query — most accurate method
-      var mmQuery = "I-75 milepost " + mmCheck.mm + " Sarasota County FL";
-      try {
-        var mmUrl = "https://maps.googleapis.com/maps/api/geocode/json?address=" +
-                    encodeURIComponent(mmQuery) +
-                    "&bounds=26.50,-82.90|27.90,-81.60" +
-                    "&key=" + GOOGLE_KEY;
-        var mmr = await fetch(mmUrl);
-        var mmd = await mmr.json();
-        if (mmd.status === "OK" && mmd.results && mmd.results.length > 0) {
-          var mmloc = mmd.results[0].geometry.location;
-          if (inRegion(mmloc.lat, mmloc.lng)) {
-            var mmresult = {lat: mmloc.lat, lng: mmloc.lng};
-            geocodeCache[cacheKey] = mmresult;
-            return mmresult;
-          }
-        }
-      } catch(e) {}
-      // Fallback to table if Google doesn't find it
-      if (I75_MM[mmCheck.mm]) {
-        geocodeCache[cacheKey] = I75_MM[mmCheck.mm];
-        return I75_MM[mmCheck.mm];
-      }
-      geocodeCache[cacheKey] = null;
-      return null;
+      var mmResult = await geocodeQuery("I-75 milepost " + mmCheck.mm + " Sarasota County FL");
+      return mmResult || I75_MM[mmCheck.mm] || null;
     }
+    var q = address.trim().replace(/\s*\/\s*/g, " & ") + ", " + (cityHint || "Sarasota") + ", FL";
+    return geocodeQuery(q);
+  }
 
-    var city = cityHint || "Sarasota";
-    try {
-      var q = address.trim();
-      q = q.replace(/\s*\/\s*/g, " & ");
-      q = q + ", " + city + ", FL";
+  // ===== Map rendering =====
+  function popupHtml(inc) {
+    return "<div class=\"popup-type\">" + esc(inc.eventType) + "</div>" +
+      "<div class=\"popup-addr\">" + esc(inc.location) + "</div>" +
+      (inc.notes ? "<div class=\"popup-addr\">" + esc(inc.notes) + "</div>" : "") +
+      "<div class=\"popup-time\">" + esc(inc.date) + " // " + esc(inc.time) + " // " + esc(inc.caseNum) + "</div>";
+  }
 
-      var url = "https://maps.googleapis.com/maps/api/geocode/json?address=" +
-                encodeURIComponent(q) +
-                "&bounds=26.50,-82.90|27.90,-81.60" +
-                "&key=" + GOOGLE_KEY;
-      var r = await fetch(url);
-      var data = await r.json();
-      if (data.status === "OK" && data.results && data.results.length > 0) {
-        var loc = data.results[0].geometry.location;
-        if (inRegion(loc.lat, loc.lng)) {
-          var result = {lat: loc.lat, lng: loc.lng};
-          geocodeCache[cacheKey] = result;
-          return result;
-        }
+  function selectCard(id, scroll) {
+    selectedId = id;
+    document.querySelectorAll(".inc-card.highlighted").forEach(function(c) { c.classList.remove("highlighted"); });
+    var card = document.getElementById("card-" + id);
+    if (card) {
+      card.classList.add("highlighted");
+      if (scroll) card.scrollIntoView({behavior:"smooth", block:"nearest"});
+    }
+  }
+
+  // Add/update/remove markers to match `incidents` (only those with coordinates). Returns their bounds.
+  function syncMarkers(incidents) {
+    var keep = {};
+    var bounds = [];
+    incidents.forEach(function(inc) {
+      if (inc._lat == null) return;
+      keep[inc._id] = true;
+      bounds.push([inc._lat, inc._lng]);
+
+      var iconKey = (inc.source === "fhp" ? "fhp" : inc.cat) + (inc.isToday ? "_today" : "_older");
+      var m = markersById[inc._id];
+      if (!m) {
+        m = L.marker([inc._lat, inc._lng], {icon: ICONS[iconKey] || ICONS.other_today, keyboard: false})
+          .bindPopup(popupHtml(inc))
+          .addTo(map);
+        (function(id) { m.on("click", function() { selectCard(id, true); }); })(inc._id);
+        markersById[inc._id] = m;
+      } else {
+        m.setLatLng([inc._lat, inc._lng]);
+        if (m._iconKey !== iconKey) m.setIcon(ICONS[iconKey] || ICONS.other_today);
+        m.setPopupContent(popupHtml(inc));
       }
-    } catch(e) {}
-    geocodeCache[cacheKey] = null;
-    return null;
+      m._iconKey = iconKey;
+    });
+    Object.keys(markersById).forEach(function(id) {
+      if (!keep[id]) { map.removeLayer(markersById[id]); delete markersById[id]; }
+    });
+    return bounds;
   }
 
   async function renderMap(incidents) {
-    mapMarkers.forEach(function(m) { map.removeLayer(m); });
-    mapMarkers = [];
+    var seq = ++renderSeq;
 
-    var mappable = incidents.filter(function(i) { return i.mappable; });
-    if (!mappable.length) return;
+    // Draw everything we already have coordinates for right away
+    syncMarkers(incidents);
 
-    // Geocode all addresses in parallel using zone as city hint for accuracy
-    await Promise.all(mappable.map(async function(inc) {
-      if (!inc._lat) {
-        var city = cityFromZone(inc.zone || "", inc.agencies || []);
-        var c = await geocode(inc.location, city);
-        if (c) { inc._lat = c.lat; inc._lng = c.lng; }
-      }
+    // Then geocode the rest in parallel using zone as city hint for accuracy
+    await Promise.all(incidents.map(async function(inc) {
+      if (!inc.mappable) { inc._geo = "nomap"; return; }
+      if (inc._lat != null) { inc._geo = "ok"; return; }
+      var c = await geocode(inc.location, cityFromZone(inc.zone || "", inc.agencies || []));
+      if (c) { inc._lat = c.lat; inc._lng = c.lng; inc._geo = "ok"; }
+      else inc._geo = "none";
     }));
 
-    var bounds = [];
-    mappable.forEach(function(inc) {
-      if (!inc._lat) return; // skip if geocode failed
+    // A newer render (filter change / refresh) started while we were waiting; let it win
+    if (seq !== renderSeq) return;
 
-      var cat = category(inc.eventType);
-      var suffix = inc.isToday ? "_today" : "_older";
-      var icon = ICONS[cat + suffix] || ICONS["other_today"];
+    var bounds = syncMarkers(incidents);
+    updateMapFlags(incidents);
 
-      var marker = L.marker([inc._lat, inc._lng], {icon: icon})
-        .bindPopup(
-          "<div class=\"popup-type\">" + inc.eventType + "</div>" +
-          "<div class=\"popup-addr\">" + inc.location + "</div>" +
-          "<div class=\"popup-time\">" + inc.date + " // " + inc.time + " // " + inc.caseNum + "</div>"
-        )
-        .addTo(map);
+    // Failed lookups aren't cached, so this clears by itself once the geocoder recovers
+    if (geoError) {
+      setStatus("Address lookup unavailable (" + geoError + ") -- county incidents can't be placed on the map", "warn");
+    } else if (/^Address lookup unavailable/.test(document.getElementById("status-bar").textContent)) {
+      setStatus("", "");
+    }
 
-      (function(id) {
-        marker._incId = id;
-        marker.on("click", function() {
-          document.querySelectorAll(".inc-card").forEach(function(c) { c.classList.remove("highlighted"); });
-          var card = document.getElementById("card-" + id);
-          if (card) { card.classList.add("highlighted"); card.scrollIntoView({behavior:"smooth", block:"nearest"}); }
-        });
-      })(inc._id);
-
-      mapMarkers.push(marker);
-      bounds.push([inc._lat, inc._lng]);
-    });
-
-    if (bounds.length) {
+    // Hold the fit until geocoding works, so a failed first load doesn't zoom onto the few markers it could place
+    if (fitPending && bounds.length && !geoError) {
+      fitPending = false;
       try { map.fitBounds(bounds, {padding:[28,28], maxZoom:14}); }
       catch(e) { map.setView([SC_LAT, SC_LNG], 10); }
     }
   }
 
-  function getFiltered() {
-    var out = allIncidents;
-    // Agency filter — check if any of the incident's agencies match
-    if (currentAgency !== "all") {
-      if (currentAgency === "other") {
-        out = out.filter(function(i) {
-          return i.agencies.some(function(a) { return a === "other" || a === "lbfd"; });
-        });
-      } else {
-        out = out.filter(function(i) {
-          return i.agencies.indexOf(currentAgency) !== -1;
-        });
-      }
-    }
-    // Type filter
-    if (currentFilter === "today")   out = out.filter(function(i) { return i.isToday; });
-    if (currentFilter === "fire")    out = out.filter(function(i) { return category(i.eventType) === "fire"; });
-    if (currentFilter === "marine")  out = out.filter(function(i) { return category(i.eventType) === "marine"; });
-    if (currentFilter === "traffic") out = out.filter(function(i) { return category(i.eventType) === "traffic"; });
-    if (currentFilter === "alarm")   out = out.filter(function(i) { return category(i.eventType) === "alarm"; });
-    return out;
+  // ===== List rendering =====
+  var MAP_FLAG = {
+    ok:      {text: "",           title: ""},
+    pending: {text: "Locating",   title: "Looking up this address"},
+    nomap:   {text: "Not mapped", title: "No exact location in the feed (street name only or redacted)"},
+    none:    {text: "Not mapped", title: "Address could not be located"}
+  };
+
+  function geoState(inc) {
+    if (!inc.mappable) return "nomap";
+    return inc._geo || (inc._lat != null ? "ok" : "pending");
   }
+
+  function mapFlagHtml(inc) {
+    var s = geoState(inc), f = MAP_FLAG[s];
+    return "<span class=\"map-flag\" data-state=\"" + s + "\" title=\"" + esc(f.title) + "\">" + esc(f.text) + "</span>";
+  }
+
+  function updateMapFlags(incidents) {
+    incidents.forEach(function(inc) {
+      var card = document.getElementById("card-" + inc._id);
+      var flag = card && card.querySelector(".map-flag");
+      if (!flag) return;
+      var s = geoState(inc), f = MAP_FLAG[s];
+      if (flag.getAttribute("data-state") === s) return;
+      flag.setAttribute("data-state", s);
+      flag.title = f.title;
+      flag.textContent = f.text;
+    });
+  }
+
+  function isNew(inc) {
+    var t = firstSeen[inc._id];
+    return !!t && Date.now() - t < NEW_WINDOW_MS;
+  }
+
+  function cardHtml(inc) {
+    var cat = inc.cat;
+    var ag = inc.agency || "other";
+    var addrHtml = inc.location
+      ? "<div class=\"inc-addr\">&#x25B8; " + esc(inc.location) + "</div>"
+      : "";
+    var notesHtml = inc.notes
+      ? "<div class=\"inc-notes\">" + esc(inc.notes) + "</div>"
+      : "";
+
+    // Build all agency tags
+    var agencyTags = (inc.agencies || [ag]).map(function(a) {
+      return "<span class=\"agency-tag " + a + "\">" + getAgencyLabel(a) + "</span>";
+    }).join("");
+
+    var fresh = isNew(inc);
+    var cls = "inc-card " + (inc.isToday ? "is-today" : "is-older") + " agency-" + ag +
+              (fresh ? " is-new" : "") + (inc._id === selectedId ? " highlighted" : "") +
+              (renderedIds[inc._id] ? " settled" : "");
+    var label = inc.eventType + ", " + (inc.location || "no address") + ", " + inc.date + " " + inc.time;
+
+    return "<div class=\"" + cls + "\" id=\"card-" + inc._id + "\" data-id=\"" + inc._id + "\" role=\"button\" tabindex=\"0\" aria-label=\"" + esc(label) + "\">" +
+      "<div class=\"inc-icon " + CAT_CLS[cat] + "\" aria-hidden=\"true\">" + (inc.source === "fhp" ? "🚓" : CAT_EMOJI[cat]) + "</div>" +
+      "<div class=\"inc-body\">" +
+        "<div class=\"inc-type\">" + esc(inc.eventType) + "</div>" +
+        addrHtml +
+        notesHtml +
+        "<div class=\"inc-case\">" + agencyTags + mapFlagHtml(inc) + "</div>" +
+      "</div>" +
+      "<div class=\"inc-meta\">" +
+        "<div class=\"inc-time\">" + esc(inc.time) + "</div>" +
+        "<div class=\"inc-date\">" + esc(inc.date) + "</div>" +
+        (fresh ? "<div class=\"status-badge badge-new\">NEW</div>" : "") +
+        "<div class=\"status-badge " + (inc.isToday ? "badge-today" : "badge-older") + "\">" + (inc.isToday ? "TODAY" : "PRIOR") + "</div>" +
+      "</div>" +
+    "</div>";
+  }
+
+  // Ids on screen after the previous render; those cards skip the entrance animation so refreshes don't flicker
+  var renderedIds = {};
 
   function renderList(incidents) {
     var el = document.getElementById("incident-list");
     if (!incidents.length) {
       var msg = currentAgency !== "all"
-        ? "NO " + currentAgency.toUpperCase() + " INCIDENTS IN CURRENT FEED"
+        ? "NO " + getAgencyLabel(currentAgency) + " INCIDENTS IN CURRENT FEED"
         : "NO INCIDENTS IN FEED";
       el.innerHTML = "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x1F4E1;</span><span>" + msg + "</span></div>";
-      renderMap([]);
-      return;
+    } else {
+      // Replacing innerHTML keeps the container's scroll position
+      el.innerHTML = incidents.map(cardHtml).join("");
     }
-
-    el.innerHTML = incidents.map(function(inc) {
-      var cat = category(inc.eventType);
-      var ag = inc.agency || "other";
-      var addrHtml = inc.location
-        ? "<div class=\"inc-addr\">&#x25B8; " + inc.location + "</div>"
-        : "";
-
-      // Build all agency tags
-      var agencyTags = (inc.agencies || [ag]).map(function(a) {
-        return "<span class=\"agency-tag " + a + "\">" + getAgencyLabel(a) + "</span>";
-      }).join("");
-
-      return "<div class=\"inc-card " + (inc.isToday ? "is-today" : "is-older") + " agency-" + ag + "\" id=\"card-" + inc._id + "\" onclick=\"focusOnMap('" + inc._id + "')\">" +
-        "<div class=\"inc-icon " + CAT_CLS[cat] + "\">" + CAT_EMOJI[cat] + "</div>" +
-        "<div class=\"inc-body\">" +
-          "<div class=\"inc-type\">" + inc.eventType + "</div>" +
-          addrHtml +
-          "<div class=\"inc-case\">" + agencyTags + "</div>" +
-        "</div>" +
-        "<div class=\"inc-meta\">" +
-          "<div class=\"inc-time\">" + inc.time + "</div>" +
-          "<div class=\"inc-date\">" + inc.date + "</div>" +
-          "<div class=\"status-badge " + (inc.isToday ? "badge-today" : "badge-older") + "\">" + (inc.isToday ? "TODAY" : "PRIOR") + "</div>" +
-        "</div>" +
-      "</div>";
-    }).join("");
-
+    renderedIds = {};
+    incidents.forEach(function(i) { renderedIds[i._id] = true; });
     renderMap(incidents);
   }
 
@@ -1000,101 +1381,301 @@
     }
     if (!inc) return;
 
-    // Highlight the card regardless
-    document.querySelectorAll(".inc-card").forEach(function(c) { c.classList.remove("highlighted"); });
-    var card = document.getElementById("card-" + id);
-    if (card) card.classList.add("highlighted");
+    selectCard(id, false);
 
-    // Pan map if we have coordinates
-    if (inc.mappable && inc._lat) {
+    function panTo() {
       map.setView([inc._lat, inc._lng], 15, {animate:true});
-      mapMarkers.forEach(function(m) { if (m._incId === id) m.openPopup(); });
-      return;
+      if (markersById[id]) markersById[id].openPopup();
     }
 
+    // In PulsePoint-only view there is no map to pan; switch to split so the map is visible
+    if (currentView === "pp" && inc.mappable) setMapView("split");
+
+    if (inc._lat != null) { panTo(); return; }
+
     // Coordinates not yet loaded — geocode on demand then pan
-    if (inc.mappable && !inc._lat) {
+    if (inc.mappable) {
       var city = cityFromZone(inc.zone || "", inc.agencies || []);
       geocode(inc.location, city).then(function(c) {
         if (!c) return;
-        inc._lat = c.lat;
-        inc._lng = c.lng;
-        map.setView([inc._lat, inc._lng], 15, {animate:true});
-        mapMarkers.forEach(function(m) { if (m._incId === id) m.openPopup(); });
+        inc._lat = c.lat; inc._lng = c.lng; inc._geo = "ok";
+        syncMarkers(getFiltered());
+        updateMapFlags([inc]);
+        panTo();
       });
     }
   }
 
-  function updateStats(list) {
-    var today   = list.filter(function(i) { return i.isToday; }).length;
-    var fire    = list.filter(function(i) { return category(i.eventType) === "fire"; }).length;
-    var traffic = list.filter(function(i) { return category(i.eventType) === "traffic"; }).length;
-    document.getElementById("s-today").textContent   = today;
-    document.getElementById("s-fire").textContent    = fire;
-    document.getElementById("s-traffic").textContent = traffic;
+  // Card clicks + keyboard activation (Enter / Space) via delegation
+  var listEl = document.getElementById("incident-list");
+  listEl.addEventListener("click", function(e) {
+    var card = e.target.closest(".inc-card");
+    if (card) focusOnMap(card.getAttribute("data-id"));
+  });
+  listEl.addEventListener("keydown", function(e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var card = e.target.closest(".inc-card");
+    if (!card) return;
+    e.preventDefault();
+    focusOnMap(card.getAttribute("data-id"));
+  });
+
+  // ===== Filters + stats =====
+  function getAgencyFiltered() {
+    if (currentAgency === "all") return allIncidents;
+    if (currentAgency === "other") {
+      return allIncidents.filter(function(i) {
+        return i.agencies.some(function(a) { return a === "other" || a === "lbfd"; });
+      });
+    }
+    return allIncidents.filter(function(i) { return i.agencies.indexOf(currentAgency) !== -1; });
+  }
+
+  function getFiltered() {
+    var out = getAgencyFiltered();
+    if (currentFilter === "today")   out = out.filter(function(i) { return i.isToday; });
+    if (currentFilter === "fire")    out = out.filter(function(i) { return i.cat === "fire"; });
+    if (currentFilter === "marine")  out = out.filter(function(i) { return i.cat === "marine"; });
+    if (currentFilter === "traffic") out = out.filter(function(i) { return i.cat === "traffic"; });
+    if (currentFilter === "alarm")   out = out.filter(function(i) { return i.cat === "alarm"; });
+    return out;
+  }
+
+  // Stats follow the agency filter (not the type tabs, which would zero out the other counters)
+  function updateStats() {
+    var list = getAgencyFiltered();
+    document.getElementById("s-today").textContent   = list.filter(function(i) { return i.isToday; }).length;
+    document.getElementById("s-fire").textContent    = list.filter(function(i) { return i.cat === "fire"; }).length;
+    document.getElementById("s-traffic").textContent = list.filter(function(i) { return i.cat === "traffic"; }).length;
     document.getElementById("s-total").textContent   = list.length;
   }
 
   function applyFilters() {
-    var filtered = getFiltered();
-    renderList(filtered);
+    updateStats();
+    renderList(getFiltered());
   }
 
   function setAgency(a, btn) {
     currentAgency = a;
-    document.querySelectorAll(".agency-btn").forEach(function(b) { b.classList.remove("active"); });
-    btn.classList.add("active");
+    document.querySelectorAll(".agency-btn").forEach(function(b) { b.classList.remove("active"); b.setAttribute("aria-pressed", "false"); });
+    btn.classList.add("active"); btn.setAttribute("aria-pressed", "true");
+    fitPending = true;
     applyFilters();
   }
 
   function setFilter(f, btn) {
     currentFilter = f;
-    document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); });
-    btn.classList.add("active");
+    document.querySelectorAll(".tab").forEach(function(t) { t.classList.remove("active"); t.setAttribute("aria-pressed", "false"); });
+    btn.classList.add("active"); btn.setAttribute("aria-pressed", "true");
+    fitPending = true;
     applyFilters();
   }
 
+  document.querySelectorAll(".agency-btn, .tab").forEach(function(b) {
+    b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false");
+  });
+
+  // ===== Map / PulsePoint view =====
+  // PulsePoint's data API is protected by a bot challenge, so its own web app is embedded rather than scraped.
+  var currentView = "map";
+  var ppFrame   = document.getElementById("pp-frame");
+  var ppPanel   = document.getElementById("pp-panel");
+  var ppLoading = document.getElementById("pp-loading");
+  var ppSlowTimer = null;
+  document.getElementById("pp-open").href = PULSEPOINT_URL;
+
+  function loadPulsePoint(force) {
+    if (!force && ppFrame.getAttribute("src")) return;
+    ppLoading.classList.remove("hidden");
+    ppLoading.innerHTML = "<div class=\"spinner\"></div><span>CONNECTING TO PULSEPOINT...</span>";
+    clearTimeout(ppSlowTimer);
+    // Browsers that block third-party storage can stall PulsePoint's bot check inside a frame
+    ppSlowTimer = setTimeout(function() {
+      ppLoading.innerHTML = "<span>PULSEPOINT IS TAKING A WHILE</span>" +
+        "<span>Your browser may be blocking it inside this page.</span>" +
+        "<a href=\"" + PULSEPOINT_URL + "\" target=\"_blank\" rel=\"noopener\">OPEN PULSEPOINT IN A NEW TAB &#x2197;</a>";
+    }, 20000);
+    ppFrame.setAttribute("src", PULSEPOINT_URL + (force ? "&_=" + Date.now() : ""));
+  }
+
+  ppFrame.addEventListener("load", function() {
+    if (!ppFrame.getAttribute("src")) return;
+    clearTimeout(ppSlowTimer);
+    // Give PulsePoint's app a moment to paint after its bot check before revealing it
+    setTimeout(function() { ppLoading.classList.add("hidden"); }, 1200);
+  });
+
+  function setMapView(view) {
+    currentView = view;
+    prefSet("view", view);
+    document.querySelectorAll(".map-tab").forEach(function(b) {
+      var on = b.getAttribute("data-view") === view;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    var section = document.getElementById("map-section");
+    section.classList.toggle("view-pp", view === "pp");
+    section.classList.toggle("view-split", view === "split");
+    if (view !== "map") loadPulsePoint(false);
+    if (view !== "pp") setTimeout(function() { map.invalidateSize(); }, 50);
+  }
+
+  document.querySelectorAll(".map-tab").forEach(function(b) {
+    b.addEventListener("click", function() { setMapView(b.getAttribute("data-view")); });
+  });
+  document.getElementById("pp-reload").addEventListener("click", function() { loadPulsePoint(true); });
+
+  var ppThemeBtn = document.getElementById("pp-theme");
+  function setPpDark(on) {
+    ppPanel.classList.toggle("pp-dark", on);
+    ppThemeBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    ppThemeBtn.title = on ? "Dark rendering (click for PulsePoint's original colors)" : "Original colors (click for dark rendering)";
+    prefSet("ppDark", on ? "1" : "0");
+  }
+  ppThemeBtn.addEventListener("click", function() { setPpDark(!ppPanel.classList.contains("pp-dark")); });
+  setPpDark(prefGet("ppDark", "1") === "1");
+
+  // ===== New-incident sound =====
+  var soundOn = false;
+  var audioCtx = null;
+  var soundBtn = document.getElementById("sound-btn");
+
+  function setSound(on) {
+    soundOn = on;
+    soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    soundBtn.innerHTML = on ? "&#x1F514;" : "&#x1F515;";
+    prefSet("sound", on ? "1" : "0");
+  }
+
+  function chime() {
+    if (!soundOn) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      [0, 0.22].forEach(function(offset) {
+        var t = audioCtx.currentTime + offset;
+        var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+        osc.type = "sine"; osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.2);
+      });
+    } catch(e) {}
+  }
+
+  // Browsers only allow audio after a user gesture, so the click that turns sound on also primes it
+  soundBtn.addEventListener("click", function() { setSound(!soundOn); if (soundOn) chime(); });
+  // A remembered "on" still needs one click anywhere on the page before the browser will play it
+  setSound(prefGet("sound", "0") === "1");
+
+  // ===== Feed loading =====
+  var loadInFlight = false;
+
+  async function fetchText(url) {
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.text();
+  }
+
   async function loadIncidents() {
+    if (loadInFlight) return;
+    loadInFlight = true;
     var btn = document.getElementById("refresh-btn");
     btn.classList.add("spinning");
-    document.getElementById("incident-list").innerHTML =
-      "<div class=\"state-screen\"><div class=\"spinner\"></div><span>ACQUIRING FEED...</span></div>";
-    setStatus("", "");
 
     try {
-      var res = await fetch(WORKER_URL);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      var html = await res.text();
-      var incidents = parseDispatchHTML(html);
+      // Load both feeds in parallel; one failing shouldn't take down the other
+      var results = await Promise.allSettled([
+        fetchText(WORKER_URL).then(parseDispatchHTML),
+        fetchText(WORKER_URL + "?src=fhp").then(parseFhpRss)
+      ]);
+      var cad = results[0], fhp = results[1];
+      if (cad.status === "rejected" && fhp.status === "rejected") throw cad.reason;
 
-      if (!incidents.length) {
+      var incidents = [].concat(
+        cad.status === "fulfilled" ? cad.value : [],
+        fhp.status === "fulfilled" ? fhp.value : []
+      );
+
+      // Guarantee unique ids, carry coordinates over from the previous refresh, and spot new incidents
+      var prev = {};
+      allIncidents.forEach(function(i) { prev[i._id] = i; });
+      var used = {};
+      var now = Date.now();
+      var newCount = 0;
+      incidents.forEach(function(inc) {
+        var base = inc._id, id = base, n = 1;
+        while (used[id]) id = base + "-" + (++n);
+        used[id] = true;
+        inc._id = id;
+
+        var old = prev[id];
+        if (old && inc._lat == null && old._lat != null) {
+          inc._lat = old._lat; inc._lng = old._lng; inc._geo = old._geo;
+        }
+        if (firstSeen[id] === undefined) {
+          firstSeen[id] = initialLoadDone ? now : 0;
+          if (initialLoadDone) newCount++;
+        }
+      });
+
+      // Newest first across both sources
+      incidents.sort(function(a, b) { return b._ts - a._ts; });
+
+      allIncidents = incidents;
+      applyFilters();
+
+      lastSuccess = Date.now();
+      lastAttemptFailed = false;
+
+      if (cad.status === "rejected") {
+        setStatus("County dispatch feed error: " + cad.reason.message + " -- showing FHP only", "warn");
+      } else if (fhp.status === "rejected") {
+        setStatus("FHP feed error: " + fhp.reason.message + " -- showing county dispatch only", "warn");
+      } else if (!incidents.length) {
         setStatus("No incidents in current feed", "warn");
-        allIncidents = [];
-        updateStats([]);
-        renderList([]);
-      } else {
-        allIncidents = incidents;
-        updateStats(allIncidents);
-        applyFilters();
-        setStatus("Live -- Sarasota County 911 Dispatch", "good");
-        setTimeout(function() { setStatus("", ""); }, 5000);
+      } else if (newCount) {
+        setStatus(newCount + " new incident" + (newCount === 1 ? "" : "s"), "good", 8000);
+        chime();
+      } else if (!initialLoadDone) {
+        setStatus("Live -- Sarasota County 911 Dispatch + FHP (" + fhp.value.length + " traffic)", "good", 5000);
+      } else if (document.getElementById("status-bar").className !== "good") {
+        setStatus("", "");
       }
+      initialLoadDone = true;
 
       document.getElementById("last-updated").textContent =
         "// LAST SYNC: " + new Date().toLocaleTimeString("en-US", {hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false});
 
     } catch(err) {
       console.error(err);
-      setStatus("Feed error: " + err.message, "error");
-      document.getElementById("incident-list").innerHTML =
-        "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x26A0;</span><span>FEED OFFLINE -- TAP REFRESH</span></div>";
+      lastAttemptFailed = true;
+      if (allIncidents.length) {
+        // Keep showing the last good data rather than blanking the screen
+        setStatus("Feed error: " + err.message + " -- showing data from " + fmtAge(Date.now() - lastSuccess), "error");
+      } else {
+        setStatus("Feed error: " + err.message, "error");
+        document.getElementById("incident-list").innerHTML =
+          "<div class=\"state-screen\"><span style=\"font-size:28px\">&#x26A0;</span><span>FEED OFFLINE -- TAP REFRESH</span></div>";
+      }
     } finally {
+      loadInFlight = false;
       btn.classList.remove("spinning");
+      tick();
     }
   }
 
+  // Refresh on an interval, but not while the tab is hidden; catch up immediately when it becomes visible
+  setInterval(function() { if (!document.hidden) loadIncidents(); }, REFRESH_MS);
+  document.addEventListener("visibilitychange", function() {
+    if (!document.hidden && Date.now() - lastSuccess >= REFRESH_MS) loadIncidents();
+  });
+
+  var savedView = prefGet("view", "map");
+  setMapView(["map", "split", "pp"].indexOf(savedView) !== -1 ? savedView : "map");
   loadIncidents();
-  setInterval(loadIncidents, 60000);
 
   // Let the layout render then tell Leaflet to fill the column
   setTimeout(function() { map.invalidateSize(); }, 200);
