@@ -1,4 +1,9 @@
-// Cloudflare Worker: CORS proxy + geocoder for the dashboard.
+// Sarasota County CAD Dashboard — Cloudflare Worker
+// Copyright (c) 2026 RLeone37 (https://github.com/RLeone37). All rights reserved.
+// Proprietary and confidential. NOT open source. No part of this file may be copied, modified,
+// distributed, or used in any form without written permission. See the LICENSE file for details.
+//
+// CORS proxy + geocoder for the dashboard.
 //   GET /                -> Sarasota County 911 dispatch log (HTML)
 //   GET /?src=cad        -> same as above
 //   GET /?src=fhp        -> Florida Highway Patrol live traffic incidents (statewide RSS)

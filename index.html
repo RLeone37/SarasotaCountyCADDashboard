@@ -1,3 +1,9 @@
+<!--
+  Sarasota County CAD Dashboard
+  Copyright (c) 2026 RLeone37 (https://github.com/RLeone37). All rights reserved.
+  Proprietary and confidential. NOT open source. No part of this file may be copied, modified,
+  distributed, or used in any form without written permission. See the LICENSE file for details.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -639,6 +645,13 @@
     font-size: 10px; color: var(--dim); letter-spacing: 2px;
     padding: 0 14px 18px; margin-top: -14px; position: relative; z-index: 1;
   }
+  .copyright-note {
+    text-align: center; font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase;
+    padding: 0 14px 18px; margin-top: -12px; position: relative; z-index: 1;
+  }
+  .copyright-note a { color: var(--dim); text-decoration: none; }
+  .copyright-note a:hover { color: var(--accent2); }
 </style>
 </head>
 <body>
@@ -722,6 +735,7 @@
         // <a href="https://trafficincidents.flhsmv.gov/SmartWebClient/CadView.aspx" target="_blank">FHP Traffic Incidents</a>
         // <a href="https://web.pulsepoint.org/?agencies=16072" target="_blank">PulsePoint</a></div>
       <div class="version-note" id="version-note"></div>
+      <div class="copyright-note">&copy; 2026 RLeone37 // <a href="https://github.com/RLeone37/SarasotaCountyCADDashboard/blob/main/LICENSE" target="_blank" rel="noopener">All Rights Reserved</a></div>
     </div>
   </div>
 
@@ -754,7 +768,7 @@
 
 <script>
   // Bump both when publishing a new release; shown in the footer so a wall display's build is easy to check
-  var APP_VERSION  = "2.1.0";
+  var APP_VERSION  = "2.1.1";
   var APP_RELEASED = "2026-09-30";
 
   var WORKER_URL = "https://sarasota-cad-proxy.yanks126.workers.dev";

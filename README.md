@@ -72,7 +72,7 @@ Incidents with only a bare street name (no number, no intersection) are listed b
 
 ## Versioning
 
-The footer shows the version and release date (e.g. `v2.1.0 // RELEASED SEP 30, 2026`), so you can confirm a wall display is running the latest build. When publishing a release, bump `APP_VERSION` and `APP_RELEASED` near the top of the script in `index.html`: patch (`2.1.1`) for small fixes, minor (`2.2.0`) for new features.
+The footer shows the version and release date (e.g. `v2.1.1 // RELEASED SEP 30, 2026`), so you can confirm a wall display is running the latest build. When publishing a release, bump `APP_VERSION` and `APP_RELEASED` near the top of the script in `index.html`: patch (`2.1.1`) for small fixes, minor (`2.2.0`) for new features.
 
 ## Hosting on GitHub Pages
 
@@ -100,3 +100,9 @@ The Cloudflare free tier allows 100,000 requests per day, which is well within r
 - Google geocoding is billed per request beyond the free allowance; the KV cache keeps repeat lookups free. When an address cannot be reliably found within the region, no marker is shown rather than an incorrect one.
 - PulsePoint is embedded, not merged — its incidents are not on the dashboard's own map or in its counts.
 - The county site typically shows the past 24 to 48 hours of incidents. Quieter agencies such as North Port may show no results if there have been no calls in that window.
+
+## License
+
+© 2026 RLeone37. All rights reserved. See [LICENSE](LICENSE) for details.
+
+This project is not open source. No part of the code, data, design, or documentation may be copied, modified, merged, published, distributed, sublicensed, or used in any form without explicit written permission from the author.
