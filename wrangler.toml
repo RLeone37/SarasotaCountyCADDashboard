@@ -12,3 +12,7 @@ keep_vars = true
 [[kv_namespaces]]
 binding = "GEOCACHE"
 id = "06bc1774b0084afb893874e244e61829"
+
+[vars]
+# Only the published dashboard may use ?geocode (protects the Google key's quota)
+ALLOWED_ORIGINS = "https://rleone37.github.io"
