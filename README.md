@@ -70,6 +70,10 @@ Addresses are geocoded by the worker's `?geocode=` endpoint using the Google Geo
 
 Incidents with only a bare street name (no number, no intersection) are listed but not mapped. Incidents that cannot be reliably located are also listed only, preventing incorrect marker placement. Both are labeled "Not mapped" on their cards (hover for the reason).
 
+## Versioning
+
+The footer shows the version and release date (e.g. `v2.1.0 // RELEASED SEP 30, 2026`), so you can confirm a wall display is running the latest build. When publishing a release, bump `APP_VERSION` and `APP_RELEASED` near the top of the script in `index.html`: patch (`2.1.1`) for small fixes, minor (`2.2.0`) for new features.
+
 ## Hosting on GitHub Pages
 
 1. Push `index.html` to your repository.

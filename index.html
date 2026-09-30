@@ -633,6 +633,12 @@
     padding: 0 14px 24px; position: relative; z-index: 1;
   }
   .source-note a { color: var(--accent2); text-decoration: none; }
+
+  .version-note {
+    text-align: center; font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--dim); letter-spacing: 2px;
+    padding: 0 14px 18px; margin-top: -14px; position: relative; z-index: 1;
+  }
 </style>
 </head>
 <body>
@@ -715,6 +721,7 @@
       <div class="source-note">SRC: <a href="https://dispatchreporting.scgov.net" target="_blank">dispatchreporting.scgov.net</a>
         // <a href="https://trafficincidents.flhsmv.gov/SmartWebClient/CadView.aspx" target="_blank">FHP Traffic Incidents</a>
         // <a href="https://web.pulsepoint.org/?agencies=16072" target="_blank">PulsePoint</a></div>
+      <div class="version-note" id="version-note"></div>
     </div>
   </div>
 
@@ -746,6 +753,10 @@
 </div>
 
 <script>
+  // Bump both when publishing a new release; shown in the footer so a wall display's build is easy to check
+  var APP_VERSION  = "2.1.0";
+  var APP_RELEASED = "2026-09-30";
+
   var WORKER_URL = "https://sarasota-cad-proxy.yanks126.workers.dev";
 
   // PulsePoint agency 16072 = Sarasota County [FL] (covers SCFD, North Port, Venice, Englewood, Nokomis, etc.)
@@ -1675,6 +1686,12 @@
   });
 
   // Older versions also had a PulsePoint-only view; it now opens as the split view
+  (function() {
+    var d = APP_RELEASED.split("-");
+    var released = new Date(+d[0], +d[1] - 1, +d[2]).toLocaleDateString("en-US", {month: "short", day: "numeric", year: "numeric"});
+    document.getElementById("version-note").textContent = "v" + APP_VERSION + " // RELEASED " + released.toUpperCase();
+  })();
+
   var savedView = prefGet("view", "map");
   setMapView(savedView === "split" || savedView === "pp" ? "split" : "map");
   loadIncidents();
